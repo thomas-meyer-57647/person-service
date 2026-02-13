@@ -28,8 +28,10 @@ class PersonTeamIntegrationTests extends AbstractMariaDbIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper =
+            com.fasterxml.jackson.databind.json.JsonMapper.builder()
+                    .findAndAddModules()
+                    .build();
 
     @Test
     void shouldListPersons_whenDataExists() throws Exception {
