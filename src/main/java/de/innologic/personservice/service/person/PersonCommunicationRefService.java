@@ -1,0 +1,123 @@
+package de.innologic.personservice.service.person;
+
+import de.innologic.personservice.domain.Person;
+import de.innologic.personservice.domain.PersonCommunicationRef;
+import de.innologic.personservice.dto.PersonCommunicationRefsResponse;
+import de.innologic.personservice.repository.PersonCommunicationRefRepository;
+import de.innologic.personservice.repository.PersonRepository;
+import de.innologic.personservice.web.error.NotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Service
+public class PersonCommunicationRefService {
+
+    private final PersonRepository personRepository;
+    private final PersonCommunicationRefRepository personCommunicationRefRepository;
+
+    public PersonCommunicationRefService(
+            PersonRepository personRepository,
+            PersonCommunicationRefRepository personCommunicationRefRepository
+    ) {
+        this.personRepository = personRepository;
+        this.personCommunicationRefRepository = personCommunicationRefRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public PersonCommunicationRefsResponse getRefs(Long companyId, Long personId) {
+        assertPersonInCompany(companyId, personId);
+        List<String> refs = personCommunicationRefRepository
+                .findAllByCompanyIdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, personId)
+                .stream()
+                .map(PersonCommunicationRef::getCommunicationId)
+                .toList();
+        return toResponse(companyId, personId, refs);
+    }
+
+    @Transactional
+    public PersonCommunicationRefsResponse replaceRefs(Long companyId, Long personId, List<String> communicationIds, String actorId) {
+        Person person = assertPersonInCompany(companyId, personId);
+        String actor = actor(actorId);
+        LocalDateTime now = LocalDateTime.now();
+
+        Set<String> desired = normalizeDistinct(communicationIds);
+        List<PersonCommunicationRef> allRows = personCommunicationRefRepository.findAllByCompanyIdAndPerson_Id(companyId, personId);
+        Map<String, PersonCommunicationRef> byCommunicationId = allRows.stream()
+                .collect(Collectors.toMap(PersonCommunicationRef::getCommunicationId, Function.identity()));
+
+        for (PersonCommunicationRef existing : allRows) {
+            boolean shouldExist = desired.contains(existing.getCommunicationId());
+            if (shouldExist && existing.getAudit().getTrashedAt() != null) {
+                existing.getAudit().setTrashedAt(null);
+                existing.getAudit().setTrashedBy(null);
+                existing.getAudit().setModifiedBy(actor);
+            }
+            if (!shouldExist && existing.getAudit().getTrashedAt() == null) {
+                existing.getAudit().setTrashedAt(now);
+                existing.getAudit().setTrashedBy(actor);
+                existing.getAudit().setModifiedBy(actor);
+            }
+        }
+
+        List<PersonCommunicationRef> toCreate = new ArrayList<>();
+        for (String communicationId : desired) {
+            if (!byCommunicationId.containsKey(communicationId)) {
+                PersonCommunicationRef ref = new PersonCommunicationRef();
+                ref.setCompanyId(companyId);
+                ref.setPerson(person);
+                ref.setCommunicationId(communicationId);
+                ref.getAudit().setCreatedBy(actor);
+                ref.getAudit().setModifiedBy(actor);
+                toCreate.add(ref);
+            }
+        }
+
+        if (!allRows.isEmpty()) {
+            personCommunicationRefRepository.saveAll(allRows);
+        }
+        if (!toCreate.isEmpty()) {
+            personCommunicationRefRepository.saveAll(toCreate);
+        }
+
+        return getRefs(companyId, personId);
+    }
+
+    private Person assertPersonInCompany(Long companyId, Long personId) {
+        return personRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(personId, companyId)
+                .orElseThrow(() -> new NotFoundException("Person not found for company and id."));
+    }
+
+    private Set<String> normalizeDistinct(List<String> communicationIds) {
+        if (communicationIds == null) {
+            return Set.of();
+        }
+        return communicationIds.stream()
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private PersonCommunicationRefsResponse toResponse(Long companyId, Long personId, List<String> refs) {
+        PersonCommunicationRefsResponse response = new PersonCommunicationRefsResponse();
+        response.setCompanyId(companyId);
+        response.setPersonId(personId);
+        response.setCommunicationIds(refs);
+        return response;
+    }
+
+    private String actor(String actorId) {
+        if (actorId == null || actorId.isBlank()) {
+            return "system";
+        }
+        return actorId.trim();
+    }
+}
