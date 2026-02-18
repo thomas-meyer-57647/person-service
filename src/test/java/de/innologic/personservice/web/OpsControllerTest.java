@@ -1,10 +1,13 @@
 package de.innologic.personservice.web;
 
+import de.innologic.personservice.config.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,6 +27,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 "application.version=1.0.0"
         }
 )
+@ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 class OpsControllerTest {
 
     @Autowired
@@ -55,6 +60,8 @@ class OpsControllerTest {
                 "application.version=1.0.0"
         }
 )
+@ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 class OpsControllerBuildPropertiesTest {
 
     @Autowired

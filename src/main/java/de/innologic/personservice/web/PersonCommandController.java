@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +32,7 @@ public class PersonCommandController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create person")
+    @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse createPerson(
             @PathVariable Long companyId,
             @Valid @RequestBody PersonCreateRequest request,
@@ -41,6 +43,7 @@ public class PersonCommandController {
 
     @PatchMapping("/{personId}")
     @Operation(summary = "Update person")
+    @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse updatePerson(
             @PathVariable Long companyId,
             @PathVariable Long personId,
@@ -52,6 +55,7 @@ public class PersonCommandController {
 
     @PostMapping("/{personId}/trash")
     @Operation(summary = "Trash person")
+    @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse trashPerson(
             @PathVariable Long companyId,
             @PathVariable Long personId,
@@ -62,6 +66,7 @@ public class PersonCommandController {
 
     @PostMapping("/{personId}/restore")
     @Operation(summary = "Restore person")
+    @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse restorePerson(
             @PathVariable Long companyId,
             @PathVariable Long personId,

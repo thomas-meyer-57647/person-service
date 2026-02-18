@@ -6,7 +6,7 @@ import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 public abstract class AbstractMariaDbIntegrationTest {
 
     @Container

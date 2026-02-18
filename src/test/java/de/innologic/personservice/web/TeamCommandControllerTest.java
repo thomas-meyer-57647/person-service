@@ -1,5 +1,6 @@
 package de.innologic.personservice.web;
 
+import de.innologic.personservice.config.TestSecurityConfig;
 import de.innologic.personservice.dto.TeamCreateRequest;
 import de.innologic.personservice.dto.TeamMemberAddRequest;
 import de.innologic.personservice.dto.TeamMemberResponse;
@@ -15,6 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -32,7 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(TeamCommandController.class)
-@Import(GlobalExceptionHandler.class)
+@ActiveProfiles("test")
+@Import({GlobalExceptionHandler.class, TestSecurityConfig.class})
 class TeamCommandControllerTest {
 
     @Autowired

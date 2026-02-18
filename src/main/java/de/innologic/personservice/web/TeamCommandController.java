@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +35,7 @@ public class TeamCommandController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create team")
+    @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse createTeam(
             @PathVariable Long companyId,
             @Valid @RequestBody TeamCreateRequest request,
@@ -44,6 +46,7 @@ public class TeamCommandController {
 
     @PatchMapping("/{teamId}")
     @Operation(summary = "Update team")
+    @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse updateTeam(
             @PathVariable Long companyId,
             @PathVariable Long teamId,
@@ -55,6 +58,7 @@ public class TeamCommandController {
 
     @PostMapping("/{teamId}/trash")
     @Operation(summary = "Trash team")
+    @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse trashTeam(
             @PathVariable Long companyId,
             @PathVariable Long teamId,
@@ -65,6 +69,7 @@ public class TeamCommandController {
 
     @PostMapping("/{teamId}/restore")
     @Operation(summary = "Restore team")
+    @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse restoreTeam(
             @PathVariable Long companyId,
             @PathVariable Long teamId,
@@ -76,6 +81,7 @@ public class TeamCommandController {
     @PostMapping("/{teamId}/members")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Add member to team")
+    @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamMemberResponse addMember(
             @PathVariable Long companyId,
             @PathVariable Long teamId,
@@ -88,6 +94,7 @@ public class TeamCommandController {
     @DeleteMapping("/{teamId}/members/{personId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Remove member from team")
+    @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public void removeMember(
             @PathVariable Long companyId,
             @PathVariable Long teamId,

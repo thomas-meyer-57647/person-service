@@ -1,5 +1,6 @@
 package de.innologic.personservice.web;
 
+import de.innologic.personservice.config.TestSecurityConfig;
 import de.innologic.personservice.dto.TeamMemberResponse;
 import de.innologic.personservice.dto.TeamResponse;
 import de.innologic.personservice.service.team.TeamQueryService;
@@ -12,6 +13,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -27,7 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(TeamQueryController.class)
-@Import(GlobalExceptionHandler.class)
+@ActiveProfiles("test")
+@Import({GlobalExceptionHandler.class, TestSecurityConfig.class})
 class TeamQueryControllerTest {
 
     @Autowired

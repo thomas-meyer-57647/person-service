@@ -5,6 +5,7 @@ import de.innologic.personservice.domain.PersonCommunicationRef;
 import de.innologic.personservice.dto.PersonCommunicationRefsResponse;
 import de.innologic.personservice.repository.PersonCommunicationRefRepository;
 import de.innologic.personservice.repository.PersonRepository;
+import de.innologic.personservice.security.CurrentActor;
 import de.innologic.personservice.web.error.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +24,16 @@ public class PersonCommunicationRefService {
 
     private final PersonRepository personRepository;
     private final PersonCommunicationRefRepository personCommunicationRefRepository;
+    private final CurrentActor currentActor;
 
     public PersonCommunicationRefService(
             PersonRepository personRepository,
-            PersonCommunicationRefRepository personCommunicationRefRepository
+            PersonCommunicationRefRepository personCommunicationRefRepository,
+            CurrentActor currentActor
     ) {
         this.personRepository = personRepository;
         this.personCommunicationRefRepository = personCommunicationRefRepository;
+        this.currentActor = currentActor;
     }
 
     @Transactional(readOnly = true)
@@ -46,7 +50,7 @@ public class PersonCommunicationRefService {
     @Transactional
     public PersonCommunicationRefsResponse replaceRefs(Long companyId, Long personId, List<String> communicationIds, String actorId) {
         Person person = assertPersonInCompany(companyId, personId);
-        String actor = actor(actorId);
+        String actor = currentActor.subjectOrSystem();
         LocalDateTime now = LocalDateTime.now();
 
         Set<String> desired = normalizeDistinct(communicationIds);
@@ -114,10 +118,4 @@ public class PersonCommunicationRefService {
         return response;
     }
 
-    private String actor(String actorId) {
-        if (actorId == null || actorId.isBlank()) {
-            return "system";
-        }
-        return actorId.trim();
-    }
 }

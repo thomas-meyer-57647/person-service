@@ -6,6 +6,7 @@ import de.innologic.personservice.service.person.PersonCommunicationRefService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -27,6 +28,7 @@ public class PersonCommunicationRefController {
 
     @GetMapping
     @Operation(summary = "Get communication refs for person")
+    @PreAuthorize("hasAuthority('SCOPE_person:read')")
     public PersonCommunicationRefsResponse getCommunicationRefs(
             @PathVariable Long companyId,
             @PathVariable Long personId
@@ -36,6 +38,7 @@ public class PersonCommunicationRefController {
 
     @PutMapping
     @Operation(summary = "Replace communication refs for person")
+    @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonCommunicationRefsResponse replaceCommunicationRefs(
             @PathVariable Long companyId,
             @PathVariable Long personId,

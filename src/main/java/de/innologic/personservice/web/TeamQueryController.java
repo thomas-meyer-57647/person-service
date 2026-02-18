@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +30,7 @@ public class TeamQueryController {
 
     @GetMapping
     @Operation(summary = "List teams by company")
+    @PreAuthorize("hasAuthority('SCOPE_team:read')")
     public Page<TeamResponse> listTeams(
             @PathVariable Long companyId,
             @RequestParam(required = false) String q,
@@ -40,12 +42,14 @@ public class TeamQueryController {
 
     @GetMapping("/{teamId}")
     @Operation(summary = "Get team by id")
+    @PreAuthorize("hasAuthority('SCOPE_team:read')")
     public TeamResponse getTeam(@PathVariable Long companyId, @PathVariable Long teamId) {
         return teamQueryService.getTeam(companyId, teamId);
     }
 
     @GetMapping("/{teamId}/members")
     @Operation(summary = "List members of a team")
+    @PreAuthorize("hasAuthority('SCOPE_team:read')")
     public List<TeamMemberResponse> getTeamMembers(@PathVariable Long companyId, @PathVariable Long teamId) {
         return teamQueryService.getTeamMembers(companyId, teamId);
     }

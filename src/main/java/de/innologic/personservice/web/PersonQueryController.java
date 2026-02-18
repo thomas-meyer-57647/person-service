@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,6 +27,7 @@ public class PersonQueryController {
 
     @GetMapping
     @Operation(summary = "List persons by company")
+    @PreAuthorize("hasAuthority('SCOPE_person:read')")
     public Page<PersonResponse> listPersons(
             @PathVariable Long companyId,
             @RequestParam(required = false) String q,
@@ -37,6 +39,7 @@ public class PersonQueryController {
 
     @GetMapping("/{personId}")
     @Operation(summary = "Get person by id")
+    @PreAuthorize("hasAuthority('SCOPE_person:read')")
     public PersonResponse getPerson(@PathVariable Long companyId, @PathVariable Long personId) {
         return personQueryService.getPerson(companyId, personId);
     }
