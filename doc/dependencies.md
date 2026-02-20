@@ -6,7 +6,7 @@ Dieses Dokument beschreibt die externen Abhaengigkeiten des `person-service` und
 
 | Dependency | Zweck | Protokoll | Konfig-Keys / ENV | Failure-Verhalten | Default |
 |---|---|---|---|---|---|
-| MariaDB | Persistenz fuer Personen, Teams und Relations (inkl. Flyway-Migrationen) | DB (MariaDB/JDBC) | `spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password`, `spring.datasource.driver-class-name`; ENV in URL/Properties: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Service startet nicht bzw. wird nicht betriebsbereit, wenn DB nicht erreichbar/ungueltig konfiguriert ist (JPA/Flyway schlagen fehl) | Enabled |
+| MariaDB | Persistenz fuer Personen, Teams und Relations (inkl. Flyway-Migrationen) | DB (MariaDB/JDBC) | `spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password`, `spring.datasource.driver-class-name`; ENV in URL/Properties: `PERSON_DB_HOST`, `PERSON_DB_PORT`, `PERSON_DB_NAME`, `PERSON_DB_USER`, `PERSON_DB_PASSWORD` | Service startet nicht bzw. wird nicht betriebsbereit, wenn DB nicht erreichbar/ungueltig konfiguriert ist (JPA/Flyway schlagen fehl) | Enabled |
 
 ## Soft Dependencies
 
