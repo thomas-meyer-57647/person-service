@@ -41,8 +41,8 @@ class PersonQueryControllerTest {
 
     @Test
     void shouldListPersons_whenValidRequest() throws Exception {
-        PersonResponse response = samplePersonResponse(10L, 1L);
-        when(personQueryService.listPersons(eq(1L), isNull(), eq(false), eq(PageRequest.of(0, 20))))
+        PersonResponse response = samplePersonResponse(10L, "1");
+        when(personQueryService.listPersons(eq("1"), isNull(), eq(false), eq(PageRequest.of(0, 20))))
                 .thenReturn(new PageImpl<>(List.of(response), PageRequest.of(0, 20), 1));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/persons", 1L))
@@ -67,7 +67,7 @@ class PersonQueryControllerTest {
 
     @Test
     void shouldGetPerson_whenPersonExists() throws Exception {
-        when(personQueryService.getPerson(1L, 10L)).thenReturn(samplePersonResponse(10L, 1L));
+        when(personQueryService.getPerson("1", "10")).thenReturn(samplePersonResponse(10L, "1"));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/persons/{personId}", 1L, 10L))
                 .andExpect(status().isOk())
@@ -80,7 +80,7 @@ class PersonQueryControllerTest {
 
     @Test
     void shouldReturn404_whenPersonDoesNotExist() throws Exception {
-        when(personQueryService.getPerson(1L, 99L)).thenThrow(new NotFoundException("Person not found"));
+        when(personQueryService.getPerson("1", "99")).thenThrow(new NotFoundException("Person not found"));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/persons/{personId}", 1L, 99L))
                 .andExpect(status().isNotFound())
@@ -90,7 +90,7 @@ class PersonQueryControllerTest {
                 .andExpect(jsonPath("$.path").value("/api/v1/companies/1/persons/99"));
     }
 
-    private PersonResponse samplePersonResponse(Long id, Long companyId) {
+    private PersonResponse samplePersonResponse(Long id, String companyId) {
         PersonResponse response = new PersonResponse();
         response.setId(id);
         response.setCompanyId(companyId);
@@ -102,4 +102,8 @@ class PersonQueryControllerTest {
         return response;
     }
 }
+
+
+
+
 

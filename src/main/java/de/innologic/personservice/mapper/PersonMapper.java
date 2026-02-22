@@ -30,5 +30,6 @@ public interface PersonMapper {
     @Mapping(target = "modifiedBy", source = "audit.modifiedBy")
     @Mapping(target = "trashedAt", source = "audit.trashedAt")
     @Mapping(target = "trashedBy", source = "audit.trashedBy")
+    @Mapping(target = "personId", source = "publicId")
     PersonResponse toResponse(Person person);
 }

@@ -41,15 +41,15 @@ class PersonCommandControllerTest {
 
     @Test
     void shouldCreatePerson_whenValidRequest() throws Exception {
-        when(personCommandService.createPerson(eq(1L), any(PersonCreateRequest.class), eq("actor-1")))
-                .thenReturn(samplePersonResponse(10L, 1L));
+        when(personCommandService.createPerson(eq("1"), any(PersonCreateRequest.class), eq("actor-1")))
+                .thenReturn(samplePersonResponse(10L, "1"));
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/persons", 1L)
                         .header("X-Actor-Id", "actor-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "companyId": 1,
+                                  "companyId": "1",
                                   "givenName": "Max",
                                   "displayName": "Max Mustermann"
                                 }
@@ -81,8 +81,8 @@ class PersonCommandControllerTest {
 
     @Test
     void shouldUpdatePerson_whenValidPatch() throws Exception {
-        when(personCommandService.updatePerson(eq(1L), eq(10L), any(PersonUpdateRequest.class), eq("actor-1")))
-                .thenReturn(samplePersonResponse(10L, 1L));
+        when(personCommandService.updatePerson(eq("1"), eq("10"), any(PersonUpdateRequest.class), eq("actor-1")))
+                .thenReturn(samplePersonResponse(10L, "1"));
 
         mockMvc.perform(patch("/api/v1/companies/{companyId}/persons/{personId}", 1L, 10L)
                         .header("X-Actor-Id", "actor-1")
@@ -101,7 +101,7 @@ class PersonCommandControllerTest {
 
     @Test
     void shouldReturn404_whenUpdatePersonNotFound() throws Exception {
-        when(personCommandService.updatePerson(eq(1L), eq(404L), any(PersonUpdateRequest.class), eq("actor-1")))
+        when(personCommandService.updatePerson(eq("1"), eq("404"), any(PersonUpdateRequest.class), eq("actor-1")))
                 .thenThrow(new NotFoundException("Person not found"));
 
         mockMvc.perform(patch("/api/v1/companies/{companyId}/persons/{personId}", 1L, 404L)
@@ -121,10 +121,10 @@ class PersonCommandControllerTest {
 
     @Test
     void shouldTrashPerson_whenPersonExists() throws Exception {
-        PersonResponse response = samplePersonResponse(10L, 1L);
+        PersonResponse response = samplePersonResponse(10L, "1");
         response.setTrashedAt(LocalDateTime.now());
         response.setTrashedBy("actor-1");
-        when(personCommandService.trashPerson(1L, 10L, "actor-1")).thenReturn(response);
+        when(personCommandService.trashPerson("1", "10", "actor-1")).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/persons/{personId}/trash", 1L, 10L)
                         .header("X-Actor-Id", "actor-1"))
@@ -137,7 +137,7 @@ class PersonCommandControllerTest {
 
     @Test
     void shouldReturn404_whenTrashPersonNotFound() throws Exception {
-        when(personCommandService.trashPerson(1L, 404L, "actor-1")).thenThrow(new NotFoundException("Person not found"));
+        when(personCommandService.trashPerson("1", "404", "actor-1")).thenThrow(new NotFoundException("Person not found"));
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/persons/{personId}/trash", 1L, 404L)
                         .header("X-Actor-Id", "actor-1"))
@@ -150,10 +150,10 @@ class PersonCommandControllerTest {
 
     @Test
     void shouldRestorePerson_whenPersonExists() throws Exception {
-        PersonResponse response = samplePersonResponse(10L, 1L);
+        PersonResponse response = samplePersonResponse(10L, "1");
         response.setTrashedAt(null);
         response.setTrashedBy(null);
-        when(personCommandService.restorePerson(1L, 10L, "actor-1")).thenReturn(response);
+        when(personCommandService.restorePerson("1", "10", "actor-1")).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/persons/{personId}/restore", 1L, 10L)
                         .header("X-Actor-Id", "actor-1"))
@@ -166,7 +166,7 @@ class PersonCommandControllerTest {
 
     @Test
     void shouldReturn404_whenRestorePersonNotFound() throws Exception {
-        when(personCommandService.restorePerson(1L, 404L, "actor-1")).thenThrow(new NotFoundException("Person not found"));
+        when(personCommandService.restorePerson("1", "404", "actor-1")).thenThrow(new NotFoundException("Person not found"));
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/persons/{personId}/restore", 1L, 404L)
                         .header("X-Actor-Id", "actor-1"))
@@ -177,7 +177,7 @@ class PersonCommandControllerTest {
                 .andExpect(jsonPath("$.path").value("/api/v1/companies/1/persons/404/restore"));
     }
 
-    private PersonResponse samplePersonResponse(Long id, Long companyId) {
+    private PersonResponse samplePersonResponse(Long id, String companyId) {
         PersonResponse response = new PersonResponse();
         response.setId(id);
         response.setCompanyId(companyId);
@@ -189,4 +189,8 @@ class PersonCommandControllerTest {
         return response;
     }
 }
+
+
+
+
 

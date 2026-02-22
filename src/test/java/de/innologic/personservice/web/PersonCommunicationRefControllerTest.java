@@ -40,7 +40,7 @@ class PersonCommunicationRefControllerTest {
 
     @Test
     void shouldGetCommunicationRefs_whenPersonExists() throws Exception {
-        when(personCommunicationRefService.getRefs(1L, 10L)).thenReturn(response(1L, 10L, List.of("c-1", "c-2")));
+        when(personCommunicationRefService.getRefs("1", "10")).thenReturn(response("1", "10", List.of("c-1", "c-2")));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/persons/{personId}/communication-refs", 1L, 10L))
                 .andExpect(status().isOk())
@@ -52,7 +52,7 @@ class PersonCommunicationRefControllerTest {
 
     @Test
     void shouldReturn404_whenGetCommunicationRefsPersonNotFound() throws Exception {
-        when(personCommunicationRefService.getRefs(1L, 404L)).thenThrow(new NotFoundException("Person not found"));
+        when(personCommunicationRefService.getRefs("1", "404")).thenThrow(new NotFoundException("Person not found"));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/persons/{personId}/communication-refs", 1L, 404L))
                 .andExpect(status().isNotFound())
@@ -64,8 +64,8 @@ class PersonCommunicationRefControllerTest {
 
     @Test
     void shouldPutCommunicationRefs_whenValidRequest() throws Exception {
-        when(personCommunicationRefService.replaceRefs(eq(1L), eq(10L), any(), eq("actor-1")))
-                .thenReturn(response(1L, 10L, List.of("c-1", "c-2")));
+        when(personCommunicationRefService.replaceRefs(eq("1"), eq("10"), any(), eq("actor-1")))
+                .thenReturn(response("1", "10", List.of("c-1", "c-2")));
 
         mockMvc.perform(put("/api/v1/companies/{companyId}/persons/{personId}/communication-refs", 1L, 10L)
                         .header("X-Actor-Id", "actor-1")
@@ -98,7 +98,7 @@ class PersonCommunicationRefControllerTest {
                 .andExpect(jsonPath("$.path").value("/api/v1/companies/1/persons/10/communication-refs"));
     }
 
-    private PersonCommunicationRefsResponse response(Long companyId, Long personId, List<String> ids) {
+    private PersonCommunicationRefsResponse response(String companyId, String personId, List<String> ids) {
         PersonCommunicationRefsResponse response = new PersonCommunicationRefsResponse();
         response.setCompanyId(companyId);
         response.setPersonId(personId);
@@ -106,4 +106,8 @@ class PersonCommunicationRefControllerTest {
         return response;
     }
 }
+
+
+
+
 

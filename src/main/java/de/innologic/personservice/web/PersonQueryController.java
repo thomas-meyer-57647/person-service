@@ -29,7 +29,7 @@ public class PersonQueryController {
     @Operation(summary = "List persons by company")
     @PreAuthorize("hasAuthority('SCOPE_person:read')")
     public Page<PersonResponse> listPersons(
-            @PathVariable Long companyId,
+            @PathVariable String companyId,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "false") boolean includeTrashed,
             @PageableDefault(size = 20) Pageable pageable
@@ -40,7 +40,8 @@ public class PersonQueryController {
     @GetMapping("/{personId}")
     @Operation(summary = "Get person by id")
     @PreAuthorize("hasAuthority('SCOPE_person:read')")
-    public PersonResponse getPerson(@PathVariable Long companyId, @PathVariable Long personId) {
+    public PersonResponse getPerson(@PathVariable String companyId, @PathVariable String personId) {
         return personQueryService.getPerson(companyId, personId);
     }
 }
+

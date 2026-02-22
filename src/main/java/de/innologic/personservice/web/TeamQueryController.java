@@ -32,7 +32,7 @@ public class TeamQueryController {
     @Operation(summary = "List teams by company")
     @PreAuthorize("hasAuthority('SCOPE_team:read')")
     public Page<TeamResponse> listTeams(
-            @PathVariable Long companyId,
+            @PathVariable String companyId,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "false") boolean includeTrashed,
             @PageableDefault(size = 20) Pageable pageable
@@ -43,14 +43,15 @@ public class TeamQueryController {
     @GetMapping("/{teamId}")
     @Operation(summary = "Get team by id")
     @PreAuthorize("hasAuthority('SCOPE_team:read')")
-    public TeamResponse getTeam(@PathVariable Long companyId, @PathVariable Long teamId) {
+    public TeamResponse getTeam(@PathVariable String companyId, @PathVariable Long teamId) {
         return teamQueryService.getTeam(companyId, teamId);
     }
 
     @GetMapping("/{teamId}/members")
     @Operation(summary = "List members of a team")
     @PreAuthorize("hasAuthority('SCOPE_team:read')")
-    public List<TeamMemberResponse> getTeamMembers(@PathVariable Long companyId, @PathVariable Long teamId) {
+    public List<TeamMemberResponse> getTeamMembers(@PathVariable String companyId, @PathVariable Long teamId) {
         return teamQueryService.getTeamMembers(companyId, teamId);
     }
 }
+

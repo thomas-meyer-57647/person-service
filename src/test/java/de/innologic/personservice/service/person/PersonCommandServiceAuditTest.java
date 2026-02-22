@@ -50,7 +50,7 @@ class PersonCommandServiceAuditTest {
         setJwtSubject("user-123");
 
         PersonCreateRequest request = new PersonCreateRequest();
-        request.setCompanyId(1L);
+        request.setCompanyId("1");
         request.setDisplayName("Max Mustermann");
 
         Person person = new Person();
@@ -64,7 +64,7 @@ class PersonCommandServiceAuditTest {
             return response;
         });
 
-        PersonResponse result = personCommandService.createPerson(1L, request, "ignored-header-actor");
+        PersonResponse result = personCommandService.createPerson("1", request, "ignored-header-actor");
 
         assertThat(result.getCreatedBy()).isEqualTo("user-123");
         assertThat(result.getModifiedBy()).isEqualTo("user-123");
@@ -75,12 +75,12 @@ class PersonCommandServiceAuditTest {
         setJwtSubject("user-456");
 
         Person person = new Person();
-        person.setCompanyId(1L);
-        when(personRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(10L, 1L)).thenReturn(Optional.of(person));
+        person.setCompanyId("1");
+        when(personRepository.findByCompanyIdAndPublicIdAndAudit_TrashedAtIsNull("1", "10")).thenReturn(Optional.of(person));
         when(personRepository.save(any(Person.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(personMapper.toResponse(any(Person.class))).thenReturn(new PersonResponse());
 
-        personCommandService.updatePerson(1L, 10L, new PersonUpdateRequest(), "ignored-header-actor");
+        personCommandService.updatePerson("1", "10", new PersonUpdateRequest(), "ignored-header-actor");
 
         assertThat(person.getAudit().getModifiedBy()).isEqualTo("user-456");
     }
@@ -90,12 +90,12 @@ class PersonCommandServiceAuditTest {
         setJwtSubject("user-789");
 
         Person person = new Person();
-        person.setCompanyId(1L);
-        when(personRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(eq(10L), eq(1L))).thenReturn(Optional.of(person));
+        person.setCompanyId("1");
+        when(personRepository.findByCompanyIdAndPublicIdAndAudit_TrashedAtIsNull(eq("1"), eq("10"))).thenReturn(Optional.of(person));
         when(personRepository.save(any(Person.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(personMapper.toResponse(any(Person.class))).thenReturn(new PersonResponse());
 
-        personCommandService.trashPerson(1L, 10L, "ignored-header-actor");
+        personCommandService.trashPerson("1", "10", "ignored-header-actor");
 
         assertThat(person.getAudit().getModifiedBy()).isEqualTo("user-789");
         assertThat(person.getAudit().getTrashedBy()).isEqualTo("user-789");
@@ -109,3 +109,7 @@ class PersonCommandServiceAuditTest {
         SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
     }
 }
+
+
+
+

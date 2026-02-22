@@ -37,10 +37,10 @@ public class PersonCommunicationRefService {
     }
 
     @Transactional(readOnly = true)
-    public PersonCommunicationRefsResponse getRefs(Long companyId, Long personId) {
-        assertPersonInCompany(companyId, personId);
+    public PersonCommunicationRefsResponse getRefs(String companyId, String personId) {
+        Person person = assertPersonInCompany(companyId, personId);
         List<String> refs = personCommunicationRefRepository
-                .findAllByCompanyIdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, personId)
+                .findAllByCompanyIdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, person.getId())
                 .stream()
                 .map(PersonCommunicationRef::getCommunicationId)
                 .toList();
@@ -48,13 +48,13 @@ public class PersonCommunicationRefService {
     }
 
     @Transactional
-    public PersonCommunicationRefsResponse replaceRefs(Long companyId, Long personId, List<String> communicationIds, String actorId) {
+    public PersonCommunicationRefsResponse replaceRefs(String companyId, String personId, List<String> communicationIds, String actorId) {
         Person person = assertPersonInCompany(companyId, personId);
         String actor = currentActor.subjectOrSystem();
         LocalDateTime now = LocalDateTime.now();
 
         Set<String> desired = normalizeDistinct(communicationIds);
-        List<PersonCommunicationRef> allRows = personCommunicationRefRepository.findAllByCompanyIdAndPerson_Id(companyId, personId);
+        List<PersonCommunicationRef> allRows = personCommunicationRefRepository.findAllByCompanyIdAndPerson_Id(companyId, person.getId());
         Map<String, PersonCommunicationRef> byCommunicationId = allRows.stream()
                 .collect(Collectors.toMap(PersonCommunicationRef::getCommunicationId, Function.identity()));
 
@@ -95,8 +95,8 @@ public class PersonCommunicationRefService {
         return getRefs(companyId, personId);
     }
 
-    private Person assertPersonInCompany(Long companyId, Long personId) {
-        return personRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(personId, companyId)
+    private Person assertPersonInCompany(String companyId, String personId) {
+        return personRepository.findByCompanyIdAndPublicIdAndAudit_TrashedAtIsNull(companyId, personId)
                 .orElseThrow(() -> new NotFoundException("Person not found for company and id."));
     }
 
@@ -110,7 +110,7 @@ public class PersonCommunicationRefService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private PersonCommunicationRefsResponse toResponse(Long companyId, Long personId, List<String> refs) {
+    private PersonCommunicationRefsResponse toResponse(String companyId, String personId, List<String> refs) {
         PersonCommunicationRefsResponse response = new PersonCommunicationRefsResponse();
         response.setCompanyId(companyId);
         response.setPersonId(personId);
@@ -119,3 +119,4 @@ public class PersonCommunicationRefService {
     }
 
 }
+

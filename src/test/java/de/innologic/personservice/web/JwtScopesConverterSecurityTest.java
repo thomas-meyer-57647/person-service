@@ -51,3 +51,5 @@ class JwtScopesConverterSecurityTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
     }
 }
+
+

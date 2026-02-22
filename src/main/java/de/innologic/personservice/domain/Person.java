@@ -8,6 +8,9 @@ import jakarta.persistence.Table;
 @Table(name = "person")
 public class Person extends BaseEntity {
 
+    @Column(name = "public_id", length = 36, unique = true, nullable = false)
+    private String publicId;
+
     @Column(name = "given_name", length = 120)
     private String givenName;
 
@@ -25,6 +28,14 @@ public class Person extends BaseEntity {
 
     @Column(name = "notes")
     private String notes;
+
+    public String getPublicId() {
+        return publicId;
+    }
+
+    public void setPublicId(String publicId) {
+        this.publicId = publicId;
+    }
 
     public String getGivenName() {
         return givenName;

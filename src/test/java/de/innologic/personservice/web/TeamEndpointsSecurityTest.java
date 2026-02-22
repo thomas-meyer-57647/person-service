@@ -47,8 +47,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({GlobalExceptionHandler.class, SecurityConfig.class, SecurityProblemSupport.class})
 class TeamEndpointsSecurityTest {
 
-    private static final long COMPANY_ID = 100L;
-    private static final long OTHER_COMPANY_ID = 200L;
+    private static final String COMPANY_ID = "100";
+    private static final String OTHER_COMPANY_ID = "200";
     private static final long TEAM_ID = 20L;
     private static final long PERSON_ID = 10L;
 
@@ -395,19 +395,19 @@ class TeamEndpointsSecurityTest {
                 .andExpect(jsonPath("$.errorCode").value("TENANT_MISMATCH"));
     }
 
-    private RequestPostProcessor jwtWithTenantAndScope(long tenant, String scope) {
-        return jwt().jwt(j -> j.claim("tenant_id", String.valueOf(tenant)).claim("scp", List.of(scope)))
+    private RequestPostProcessor jwtWithTenantAndScope(String tenant, String scope) {
+        return jwt().jwt(j -> j.claim("tenant_id", tenant).claim("scp", List.of(scope)))
                 .authorities(jwtScopesConverter);
     }
 
-    private RequestPostProcessor jwtWithTenantNoScope(long tenant) {
-        return jwt().jwt(j -> j.claim("tenant_id", String.valueOf(tenant)));
+    private RequestPostProcessor jwtWithTenantNoScope(String tenant) {
+        return jwt().jwt(j -> j.claim("tenant_id", tenant));
     }
 
-    private String validCreateTeamBody(long companyId) {
+    private String validCreateTeamBody(String companyId) {
         return """
                 {
-                  "companyId": %d,
+                  "companyId": "%s",
                   "name": "Core Team",
                   "description": "Main team"
                 }
@@ -431,7 +431,7 @@ class TeamEndpointsSecurityTest {
                 """;
     }
 
-    private TeamResponse sampleTeamResponse(Long id, Long companyId) {
+    private TeamResponse sampleTeamResponse(Long id, String companyId) {
         TeamResponse response = new TeamResponse();
         response.setId(id);
         response.setCompanyId(companyId);
@@ -441,7 +441,7 @@ class TeamEndpointsSecurityTest {
         return response;
     }
 
-    private TeamMemberResponse sampleMemberResponse(Long companyId, Long teamId, Long personId) {
+    private TeamMemberResponse sampleMemberResponse(String companyId, Long teamId, Long personId) {
         TeamMemberResponse response = new TeamMemberResponse();
         response.setId(99L);
         response.setCompanyId(companyId);
@@ -453,3 +453,7 @@ class TeamEndpointsSecurityTest {
         return response;
     }
 }
+
+
+
+

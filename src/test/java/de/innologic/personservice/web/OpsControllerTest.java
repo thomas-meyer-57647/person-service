@@ -83,3 +83,5 @@ class OpsControllerBuildPropertiesTest {
                 .andExpect(jsonPath("$.buildTime").value(containsString("2026-02-13T12:00:00Z")));
     }
 }
+
+

@@ -20,13 +20,13 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     @Query("select t from Team t where t.id = :id and t.audit.trashedAt is null")
     Optional<Team> findById(@Param("id") Long id);
 
-    List<Team> findAllByCompanyIdAndAudit_TrashedAtIsNull(Long companyId);
+    List<Team> findAllByCompanyIdAndAudit_TrashedAtIsNull(String companyId);
 
-    Optional<Team> findByIdAndCompanyIdAndAudit_TrashedAtIsNull(Long id, Long companyId);
+    Optional<Team> findByIdAndCompanyIdAndAudit_TrashedAtIsNull(Long id, String companyId);
 
-    Optional<Team> findByIdAndCompanyId(Long id, Long companyId);
+    Optional<Team> findByIdAndCompanyId(Long id, String companyId);
 
-    Optional<Team> findByCompanyIdAndNameAndAudit_TrashedAtIsNull(Long companyId, String name);
+    Optional<Team> findByCompanyIdAndNameAndAudit_TrashedAtIsNull(String companyId, String name);
 
     @Query("""
             select t from Team t
@@ -39,9 +39,10 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
                   )
             """)
     Page<Team> search(
-            @Param("companyId") Long companyId,
+            @Param("companyId") String companyId,
             @Param("q") String q,
             @Param("includeTrashed") boolean includeTrashed,
             Pageable pageable
     );
 }
+

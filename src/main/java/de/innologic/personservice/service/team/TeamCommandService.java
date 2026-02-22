@@ -49,7 +49,7 @@ public class TeamCommandService {
         this.currentActor = currentActor;
     }
 
-    public TeamResponse createTeam(Long companyId, TeamCreateRequest request, String actorId) {
+    public TeamResponse createTeam(String companyId, TeamCreateRequest request, String actorId) {
         String actor = currentActor.subjectOrSystem();
         validateCompany(request.getCompanyId(), companyId);
         teamRepository.findByCompanyIdAndNameAndAudit_TrashedAtIsNull(companyId, request.getName())
@@ -63,7 +63,7 @@ public class TeamCommandService {
         return teamMapper.toResponse(teamRepository.save(team));
     }
 
-    public TeamResponse updateTeam(Long companyId, Long teamId, TeamUpdateRequest request, String actorId) {
+    public TeamResponse updateTeam(String companyId, Long teamId, TeamUpdateRequest request, String actorId) {
         String actor = currentActor.subjectOrSystem();
         Team team = teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
@@ -78,7 +78,7 @@ public class TeamCommandService {
         return teamMapper.toResponse(teamRepository.save(team));
     }
 
-    public TeamResponse trashTeam(Long companyId, Long teamId, String actorId) {
+    public TeamResponse trashTeam(String companyId, Long teamId, String actorId) {
         String actor = currentActor.subjectOrSystem();
         Team team = teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
@@ -97,7 +97,7 @@ public class TeamCommandService {
         return teamMapper.toResponse(teamRepository.save(team));
     }
 
-    public TeamResponse restoreTeam(Long companyId, Long teamId, String actorId) {
+    public TeamResponse restoreTeam(String companyId, Long teamId, String actorId) {
         String actor = currentActor.subjectOrSystem();
         Team team = teamRepository.findByIdAndCompanyId(teamId, companyId)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
@@ -107,7 +107,7 @@ public class TeamCommandService {
         return teamMapper.toResponse(teamRepository.save(team));
     }
 
-    public TeamMemberResponse addTeamMember(Long companyId, Long teamId, TeamMemberAddRequest request, String actorId) {
+    public TeamMemberResponse addTeamMember(String companyId, Long teamId, TeamMemberAddRequest request, String actorId) {
         String actor = currentActor.subjectOrSystem();
         Team team = teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
@@ -126,9 +126,11 @@ public class TeamCommandService {
         return teamMemberMapper.toResponse(teamMemberRepository.save(teamMember));
     }
 
-    public void removeTeamMember(Long companyId, Long teamId, Long personId, String actorId) {
+    public void removeTeamMember(String companyId, Long teamId, String personId, String actorId) {
         String actor = currentActor.subjectOrSystem();
-        TeamMember teamMember = teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, teamId, personId)
+        Person person = personRepository.findByCompanyIdAndPublicId(companyId, personId)
+                .orElseThrow(() -> new NotFoundException("Person not found for company and id."));
+        TeamMember teamMember = teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, teamId, person.getId())
                 .orElseThrow(() -> new NotFoundException("Active team member relation not found."));
         teamMember.getAudit().setTrashedAt(LocalDateTime.now());
         teamMember.getAudit().setTrashedBy(actor);
@@ -139,10 +141,11 @@ public class TeamCommandService {
         teamMemberRepository.save(teamMember);
     }
 
-    private void validateCompany(Long bodyCompanyId, Long pathCompanyId) {
+    private void validateCompany(String bodyCompanyId, String pathCompanyId) {
         if (bodyCompanyId == null || !bodyCompanyId.equals(pathCompanyId)) {
             throw new BadRequestException("companyId in body must match companyId in path.");
         }
     }
 
 }
+

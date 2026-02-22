@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 public class PersonCreateRequest {
 
     @NotNull
-    private Long companyId;
+    private String companyId;
 
     @Size(max = 120)
     private String givenName;
@@ -27,11 +27,11 @@ public class PersonCreateRequest {
 
     private String notes;
 
-    public Long getCompanyId() {
+    public String getCompanyId() {
         return companyId;
     }
 
-    public void setCompanyId(Long companyId) {
+    public void setCompanyId(String companyId) {
         this.companyId = companyId;
     }
 
@@ -83,3 +83,5 @@ public class PersonCreateRequest {
         this.notes = notes;
     }
 }
+
+

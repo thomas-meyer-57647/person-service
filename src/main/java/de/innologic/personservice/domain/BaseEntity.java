@@ -19,7 +19,7 @@ public abstract class BaseEntity {
     private Long id;
 
     @Column(name = "company_id", nullable = false)
-    private Long companyId;
+    private String companyId;
 
     @Embedded
     private AuditMetadata audit = new AuditMetadata();
@@ -44,11 +44,11 @@ public abstract class BaseEntity {
         return id;
     }
 
-    public Long getCompanyId() {
+    public String getCompanyId() {
         return companyId;
     }
 
-    public void setCompanyId(Long companyId) {
+    public void setCompanyId(String companyId) {
         this.companyId = companyId;
     }
 
@@ -60,3 +60,5 @@ public abstract class BaseEntity {
         this.audit = audit;
     }
 }
+
+

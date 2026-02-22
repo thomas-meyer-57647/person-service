@@ -30,8 +30,8 @@ public class PersonCommunicationRefController {
     @Operation(summary = "Get communication refs for person")
     @PreAuthorize("hasAuthority('SCOPE_person:read')")
     public PersonCommunicationRefsResponse getCommunicationRefs(
-            @PathVariable Long companyId,
-            @PathVariable Long personId
+            @PathVariable String companyId,
+            @PathVariable String personId
     ) {
         return personCommunicationRefService.getRefs(companyId, personId);
     }
@@ -40,11 +40,12 @@ public class PersonCommunicationRefController {
     @Operation(summary = "Replace communication refs for person")
     @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonCommunicationRefsResponse replaceCommunicationRefs(
-            @PathVariable Long companyId,
-            @PathVariable Long personId,
+            @PathVariable String companyId,
+            @PathVariable String personId,
             @Valid @RequestBody PersonCommunicationRefsRequest request,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
         return personCommunicationRefService.replaceRefs(companyId, personId, request.getCommunicationIds(), actorId);
     }
 }
+

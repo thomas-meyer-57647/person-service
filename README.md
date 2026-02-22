@@ -2,6 +2,12 @@
 
 Spring Boot Service fuer Personen- und Team-Verwaltung.
 
+## ID-Modell (extern vs. intern)
+
+- `personId` in der API ist die externe ID und entspricht `publicId` (UUID-String, z. B. `550e8400-e29b-41d4-a716-446655440000`).
+- `companyId` wird in allen Endpunkten und Payloads als `String` gefuehrt (typisch UUID-Format).
+- Die interne Datenbank-PK `id` bei `person` bleibt `Long` und ist ein rein internes Persistenzdetail; sie wird extern nicht zur Identifikation in Pfaden verwendet.
+
 ## Local Development
 
 ### Benoetigte ENV Vars

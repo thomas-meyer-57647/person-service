@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public class TeamMemberResponse {
 
     private Long id;
-    private Long companyId;
+    private String companyId;
     private Long teamId;
     private Long personId;
     private String role;
@@ -26,11 +26,11 @@ public class TeamMemberResponse {
         this.id = id;
     }
 
-    public Long getCompanyId() {
+    public String getCompanyId() {
         return companyId;
     }
 
-    public void setCompanyId(Long companyId) {
+    public void setCompanyId(String companyId) {
         this.companyId = companyId;
     }
 
@@ -122,3 +122,4 @@ public class TeamMemberResponse {
         this.trashedBy = trashedBy;
     }
 }
+

@@ -21,12 +21,12 @@ public class PersonQueryService {
         this.personMapper = personMapper;
     }
 
-    public Page<PersonResponse> listPersons(Long companyId, String q, boolean includeTrashed, Pageable pageable) {
+    public Page<PersonResponse> listPersons(String companyId, String q, boolean includeTrashed, Pageable pageable) {
         return personRepository.search(companyId, normalize(q), includeTrashed, pageable).map(personMapper::toResponse);
     }
 
-    public PersonResponse getPerson(Long companyId, Long personId) {
-        return personRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(personId, companyId)
+    public PersonResponse getPerson(String companyId, String personId) {
+        return personRepository.findByCompanyIdAndPublicIdAndAudit_TrashedAtIsNull(companyId, personId)
                 .map(personMapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Person not found for company and id."));
     }
@@ -38,3 +38,4 @@ public class PersonQueryService {
         return value.trim();
     }
 }
+

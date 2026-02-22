@@ -24,3 +24,5 @@ public abstract class AbstractMariaDbIntegrationTest {
         registry.add("spring.datasource.driver-class-name", MARIA_DB::getDriverClassName);
     }
 }
+
+

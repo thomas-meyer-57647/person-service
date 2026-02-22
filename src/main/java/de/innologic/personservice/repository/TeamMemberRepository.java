@@ -18,15 +18,16 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
     @Query("select tm from TeamMember tm where tm.id = :id and tm.audit.trashedAt is null")
     Optional<TeamMember> findById(@Param("id") Long id);
 
-    List<TeamMember> findAllByCompanyIdAndAudit_TrashedAtIsNull(Long companyId);
+    List<TeamMember> findAllByCompanyIdAndAudit_TrashedAtIsNull(String companyId);
 
     List<TeamMember> findAllByTeam_IdAndAudit_TrashedAtIsNull(Long teamId);
 
-    List<TeamMember> findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(Long companyId, Long teamId);
+    List<TeamMember> findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(String companyId, Long teamId);
 
     List<TeamMember> findAllByPerson_IdAndAudit_TrashedAtIsNull(Long personId);
 
     Optional<TeamMember> findByTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(Long teamId, Long personId);
 
-    Optional<TeamMember> findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(Long companyId, Long teamId, Long personId);
+    Optional<TeamMember> findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(String companyId, Long teamId, Long personId);
 }
+

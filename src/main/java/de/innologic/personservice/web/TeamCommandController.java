@@ -37,7 +37,7 @@ public class TeamCommandController {
     @Operation(summary = "Create team")
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse createTeam(
-            @PathVariable Long companyId,
+            @PathVariable String companyId,
             @Valid @RequestBody TeamCreateRequest request,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
@@ -48,7 +48,7 @@ public class TeamCommandController {
     @Operation(summary = "Update team")
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse updateTeam(
-            @PathVariable Long companyId,
+            @PathVariable String companyId,
             @PathVariable Long teamId,
             @Valid @RequestBody TeamUpdateRequest request,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
@@ -60,7 +60,7 @@ public class TeamCommandController {
     @Operation(summary = "Trash team")
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse trashTeam(
-            @PathVariable Long companyId,
+            @PathVariable String companyId,
             @PathVariable Long teamId,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
@@ -71,7 +71,7 @@ public class TeamCommandController {
     @Operation(summary = "Restore team")
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse restoreTeam(
-            @PathVariable Long companyId,
+            @PathVariable String companyId,
             @PathVariable Long teamId,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
@@ -83,7 +83,7 @@ public class TeamCommandController {
     @Operation(summary = "Add member to team")
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamMemberResponse addMember(
-            @PathVariable Long companyId,
+            @PathVariable String companyId,
             @PathVariable Long teamId,
             @Valid @RequestBody TeamMemberAddRequest request,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
@@ -96,11 +96,12 @@ public class TeamCommandController {
     @Operation(summary = "Remove member from team")
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public void removeMember(
-            @PathVariable Long companyId,
+            @PathVariable String companyId,
             @PathVariable Long teamId,
-            @PathVariable Long personId,
+            @PathVariable String personId,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
         teamCommandService.removeTeamMember(companyId, teamId, personId, actorId);
     }
 }
+

@@ -20,11 +20,15 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
     @Query("select p from Person p where p.id = :id and p.audit.trashedAt is null")
     Optional<Person> findById(@Param("id") Long id);
 
-    List<Person> findAllByCompanyIdAndAudit_TrashedAtIsNull(Long companyId);
+    List<Person> findAllByCompanyIdAndAudit_TrashedAtIsNull(String companyId);
 
-    Optional<Person> findByIdAndCompanyIdAndAudit_TrashedAtIsNull(Long id, Long companyId);
+    Optional<Person> findByCompanyIdAndPublicId(String companyId, String publicId);
 
-    Optional<Person> findByIdAndCompanyId(Long id, Long companyId);
+    Optional<Person> findByCompanyIdAndPublicIdAndAudit_TrashedAtIsNull(String companyId, String publicId);
+
+    Optional<Person> findByIdAndCompanyIdAndAudit_TrashedAtIsNull(Long id, String companyId);
+
+    Optional<Person> findByIdAndCompanyId(Long id, String companyId);
 
     @Query("""
             select p from Person p
@@ -39,9 +43,10 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
                   )
             """)
     Page<Person> search(
-            @Param("companyId") Long companyId,
+            @Param("companyId") String companyId,
             @Param("q") String q,
             @Param("includeTrashed") boolean includeTrashed,
             Pageable pageable
     );
 }
+

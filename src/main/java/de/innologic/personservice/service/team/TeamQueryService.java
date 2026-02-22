@@ -35,17 +35,17 @@ public class TeamQueryService {
         this.teamMemberMapper = teamMemberMapper;
     }
 
-    public Page<TeamResponse> listTeams(Long companyId, String q, boolean includeTrashed, Pageable pageable) {
+    public Page<TeamResponse> listTeams(String companyId, String q, boolean includeTrashed, Pageable pageable) {
         return teamRepository.search(companyId, normalize(q), includeTrashed, pageable).map(teamMapper::toResponse);
     }
 
-    public TeamResponse getTeam(Long companyId, Long teamId) {
+    public TeamResponse getTeam(String companyId, Long teamId) {
         return teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
                 .map(teamMapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
     }
 
-    public List<TeamMemberResponse> getTeamMembers(Long companyId, Long teamId) {
+    public List<TeamMemberResponse> getTeamMembers(String companyId, Long teamId) {
         teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
         return teamMemberRepository.findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(companyId, teamId).stream()
@@ -60,3 +60,4 @@ public class TeamQueryService {
         return value.trim();
     }
 }
+

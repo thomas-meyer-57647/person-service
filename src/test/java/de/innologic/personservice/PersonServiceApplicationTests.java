@@ -16,3 +16,5 @@ class PersonServiceApplicationTests extends AbstractMariaDbIntegrationTest {
     }
 
 }
+
+

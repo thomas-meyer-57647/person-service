@@ -7,7 +7,8 @@ import java.util.List;
 
 public interface PersonCommunicationRefRepository extends JpaRepository<PersonCommunicationRef, Long> {
 
-    List<PersonCommunicationRef> findAllByCompanyIdAndPerson_IdAndAudit_TrashedAtIsNull(Long companyId, Long personId);
+    List<PersonCommunicationRef> findAllByCompanyIdAndPerson_IdAndAudit_TrashedAtIsNull(String companyId, Long personId);
 
-    List<PersonCommunicationRef> findAllByCompanyIdAndPerson_Id(Long companyId, Long personId);
+    List<PersonCommunicationRef> findAllByCompanyIdAndPerson_Id(String companyId, Long personId);
 }
+

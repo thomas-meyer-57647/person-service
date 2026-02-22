@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 public class TeamCreateRequest {
 
     @NotNull
-    private Long companyId;
+    private String companyId;
 
     @NotBlank
     @Size(max = 160)
@@ -15,11 +15,11 @@ public class TeamCreateRequest {
 
     private String description;
 
-    public Long getCompanyId() {
+    public String getCompanyId() {
         return companyId;
     }
 
-    public void setCompanyId(Long companyId) {
+    public void setCompanyId(String companyId) {
         this.companyId = companyId;
     }
 
@@ -39,3 +39,4 @@ public class TeamCreateRequest {
         this.description = description;
     }
 }
+

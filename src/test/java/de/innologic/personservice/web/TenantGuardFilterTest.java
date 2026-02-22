@@ -74,7 +74,7 @@ class TenantGuardFilterTest {
 
     @Test
     void shouldAllowRequestWhenTenantMatchesCompanyId() throws Exception {
-        when(personQueryService.listPersons(eq(100L), isNull(), eq(false), eq(PageRequest.of(0, 20))))
+        when(personQueryService.listPersons(eq("100"), isNull(), eq(false), eq(PageRequest.of(0, 20))))
                 .thenReturn(new PageImpl<>(List.of(new PersonResponse()), PageRequest.of(0, 20), 1));
         when(jwtDecoder.decode("match-token")).thenReturn(jwtWithTenant("100", "match-token"));
 
@@ -87,7 +87,7 @@ class TenantGuardFilterTest {
                 .andExpect(authenticated().withAuthentication(authentication ->
                         assertThat(authentication).isInstanceOf(JwtAuthenticationToken.class)));
 
-        verify(personQueryService).listPersons(eq(100L), isNull(), eq(false), eq(PageRequest.of(0, 20)));
+        verify(personQueryService).listPersons(eq("100"), isNull(), eq(false), eq(PageRequest.of(0, 20)));
     }
 
     private Jwt jwtWithTenant(String tenantId, String tokenValue) {
@@ -101,3 +101,5 @@ class TenantGuardFilterTest {
                 .build();
     }
 }
+
+

@@ -34,7 +34,7 @@ public class PersonCommandController {
     @Operation(summary = "Create person")
     @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse createPerson(
-            @PathVariable Long companyId,
+            @PathVariable String companyId,
             @Valid @RequestBody PersonCreateRequest request,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
@@ -45,8 +45,8 @@ public class PersonCommandController {
     @Operation(summary = "Update person")
     @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse updatePerson(
-            @PathVariable Long companyId,
-            @PathVariable Long personId,
+            @PathVariable String companyId,
+            @PathVariable String personId,
             @Valid @RequestBody PersonUpdateRequest request,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
@@ -57,8 +57,8 @@ public class PersonCommandController {
     @Operation(summary = "Trash person")
     @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse trashPerson(
-            @PathVariable Long companyId,
-            @PathVariable Long personId,
+            @PathVariable String companyId,
+            @PathVariable String personId,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
         return personCommandService.trashPerson(companyId, personId, actorId);
@@ -68,10 +68,11 @@ public class PersonCommandController {
     @Operation(summary = "Restore person")
     @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse restorePerson(
-            @PathVariable Long companyId,
-            @PathVariable Long personId,
+            @PathVariable String companyId,
+            @PathVariable String personId,
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
         return personCommandService.restorePerson(companyId, personId, actorId);
     }
 }
+

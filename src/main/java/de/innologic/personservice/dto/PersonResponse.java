@@ -5,7 +5,8 @@ import java.time.LocalDateTime;
 public class PersonResponse {
 
     private Long id;
-    private Long companyId;
+    private String personId;
+    private String companyId;
     private String givenName;
     private String familyName;
     private String displayName;
@@ -27,11 +28,19 @@ public class PersonResponse {
         this.id = id;
     }
 
-    public Long getCompanyId() {
+    public String getPersonId() {
+        return personId;
+    }
+
+    public void setPersonId(String personId) {
+        this.personId = personId;
+    }
+
+    public String getCompanyId() {
         return companyId;
     }
 
-    public void setCompanyId(Long companyId) {
+    public void setCompanyId(String companyId) {
         this.companyId = companyId;
     }
 
@@ -131,3 +140,4 @@ public class PersonResponse {
         this.trashedBy = trashedBy;
     }
 }
+

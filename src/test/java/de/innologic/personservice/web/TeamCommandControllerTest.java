@@ -46,15 +46,15 @@ class TeamCommandControllerTest {
 
     @Test
     void shouldCreateTeam_whenValidRequest() throws Exception {
-        when(teamCommandService.createTeam(eq(1L), any(TeamCreateRequest.class), eq("actor-1")))
-                .thenReturn(sampleTeamResponse(20L, 1L));
+        when(teamCommandService.createTeam(eq("1"), any(TeamCreateRequest.class), eq("actor-1")))
+                .thenReturn(sampleTeamResponse(20L, "1"));
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/teams", 1L)
                         .header("X-Actor-Id", "actor-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "companyId": 1,
+                                  "companyId": "1",
                                   "name": "Core Team",
                                   "description": "Main team"
                                 }
@@ -68,7 +68,7 @@ class TeamCommandControllerTest {
 
     @Test
     void shouldReturn409_whenCreateTeamHasDuplicateName() throws Exception {
-        when(teamCommandService.createTeam(eq(1L), any(TeamCreateRequest.class), eq("actor-1")))
+        when(teamCommandService.createTeam(eq("1"), any(TeamCreateRequest.class), eq("actor-1")))
                 .thenThrow(new ConflictException("Team name already exists"));
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/teams", 1L)
@@ -76,7 +76,7 @@ class TeamCommandControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "companyId": 1,
+                                  "companyId": "1",
                                   "name": "Core Team"
                                 }
                                 """))
@@ -89,8 +89,8 @@ class TeamCommandControllerTest {
 
     @Test
     void shouldUpdateTeam_whenValidPatch() throws Exception {
-        when(teamCommandService.updateTeam(eq(1L), eq(20L), any(TeamUpdateRequest.class), eq("actor-1")))
-                .thenReturn(sampleTeamResponse(20L, 1L));
+        when(teamCommandService.updateTeam(eq("1"), eq(20L), any(TeamUpdateRequest.class), eq("actor-1")))
+                .thenReturn(sampleTeamResponse(20L, "1"));
 
         mockMvc.perform(patch("/api/v1/companies/{companyId}/teams/{teamId}", 1L, 20L)
                         .header("X-Actor-Id", "actor-1")
@@ -109,7 +109,7 @@ class TeamCommandControllerTest {
 
     @Test
     void shouldReturn404_whenUpdateTeamNotFound() throws Exception {
-        when(teamCommandService.updateTeam(eq(1L), eq(404L), any(TeamUpdateRequest.class), eq("actor-1")))
+        when(teamCommandService.updateTeam(eq("1"), eq(404L), any(TeamUpdateRequest.class), eq("actor-1")))
                 .thenThrow(new NotFoundException("Team not found"));
 
         mockMvc.perform(patch("/api/v1/companies/{companyId}/teams/{teamId}", 1L, 404L)
@@ -129,10 +129,10 @@ class TeamCommandControllerTest {
 
     @Test
     void shouldTrashTeam_whenTeamExists() throws Exception {
-        TeamResponse trashed = sampleTeamResponse(20L, 1L);
+        TeamResponse trashed = sampleTeamResponse(20L, "1");
         trashed.setTrashedAt(LocalDateTime.now());
         trashed.setTrashedBy("actor-1");
-        when(teamCommandService.trashTeam(1L, 20L, "actor-1")).thenReturn(trashed);
+        when(teamCommandService.trashTeam("1", 20L, "actor-1")).thenReturn(trashed);
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/trash", 1L, 20L)
                         .header("X-Actor-Id", "actor-1"))
@@ -145,7 +145,7 @@ class TeamCommandControllerTest {
 
     @Test
     void shouldReturn404_whenTrashTeamNotFound() throws Exception {
-        when(teamCommandService.trashTeam(1L, 404L, "actor-1")).thenThrow(new NotFoundException("Team not found"));
+        when(teamCommandService.trashTeam("1", 404L, "actor-1")).thenThrow(new NotFoundException("Team not found"));
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/trash", 1L, 404L)
                         .header("X-Actor-Id", "actor-1"))
@@ -158,10 +158,10 @@ class TeamCommandControllerTest {
 
     @Test
     void shouldRestoreTeam_whenTeamExists() throws Exception {
-        TeamResponse restored = sampleTeamResponse(20L, 1L);
+        TeamResponse restored = sampleTeamResponse(20L, "1");
         restored.setTrashedAt(null);
         restored.setTrashedBy(null);
-        when(teamCommandService.restoreTeam(1L, 20L, "actor-1")).thenReturn(restored);
+        when(teamCommandService.restoreTeam("1", 20L, "actor-1")).thenReturn(restored);
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/restore", 1L, 20L)
                         .header("X-Actor-Id", "actor-1"))
@@ -174,7 +174,7 @@ class TeamCommandControllerTest {
 
     @Test
     void shouldReturn404_whenRestoreTeamNotFound() throws Exception {
-        when(teamCommandService.restoreTeam(1L, 404L, "actor-1")).thenThrow(new NotFoundException("Team not found"));
+        when(teamCommandService.restoreTeam("1", 404L, "actor-1")).thenThrow(new NotFoundException("Team not found"));
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/restore", 1L, 404L)
                         .header("X-Actor-Id", "actor-1"))
@@ -187,8 +187,8 @@ class TeamCommandControllerTest {
 
     @Test
     void shouldAddMember_whenValidRequest() throws Exception {
-        TeamMemberResponse response = sampleMemberResponse(50L, 1L, 20L, 10L);
-        when(teamCommandService.addTeamMember(eq(1L), eq(20L), any(TeamMemberAddRequest.class), eq("actor-1")))
+        TeamMemberResponse response = sampleMemberResponse(50L, "1", 20L, 10L);
+        when(teamCommandService.addTeamMember(eq("1"), eq(20L), any(TeamMemberAddRequest.class), eq("actor-1")))
                 .thenReturn(response);
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/members", 1L, 20L)
@@ -210,7 +210,7 @@ class TeamCommandControllerTest {
 
     @Test
     void shouldReturn409_whenAddMemberDuplicate() throws Exception {
-        when(teamCommandService.addTeamMember(eq(1L), eq(20L), any(TeamMemberAddRequest.class), eq("actor-1")))
+        when(teamCommandService.addTeamMember(eq("1"), eq(20L), any(TeamMemberAddRequest.class), eq("actor-1")))
                 .thenThrow(new ConflictException("Person is already an active member"));
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/members", 1L, 20L)
@@ -239,7 +239,7 @@ class TeamCommandControllerTest {
     @Test
     void shouldReturn404_whenRemoveMemberNotFound() throws Exception {
         doThrow(new NotFoundException("Active team member relation not found"))
-                .when(teamCommandService).removeTeamMember(1L, 20L, 404L, "actor-1");
+                .when(teamCommandService).removeTeamMember("1", 20L, "404", "actor-1");
 
         mockMvc.perform(delete("/api/v1/companies/{companyId}/teams/{teamId}/members/{personId}", 1L, 20L, 404L)
                         .header("X-Actor-Id", "actor-1"))
@@ -250,7 +250,7 @@ class TeamCommandControllerTest {
                 .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/20/members/404"));
     }
 
-    private TeamResponse sampleTeamResponse(Long id, Long companyId) {
+    private TeamResponse sampleTeamResponse(Long id, String companyId) {
         TeamResponse response = new TeamResponse();
         response.setId(id);
         response.setCompanyId(companyId);
@@ -262,7 +262,7 @@ class TeamCommandControllerTest {
         return response;
     }
 
-    private TeamMemberResponse sampleMemberResponse(Long id, Long companyId, Long teamId, Long personId) {
+    private TeamMemberResponse sampleMemberResponse(Long id, String companyId, Long teamId, Long personId) {
         TeamMemberResponse response = new TeamMemberResponse();
         response.setId(id);
         response.setCompanyId(companyId);
@@ -276,4 +276,9 @@ class TeamCommandControllerTest {
         return response;
     }
 }
+
+
+
+
+
 

@@ -4,23 +4,23 @@ import java.util.List;
 
 public class PersonCommunicationRefsResponse {
 
-    private Long companyId;
-    private Long personId;
+    private String companyId;
+    private String personId;
     private List<String> communicationIds;
 
-    public Long getCompanyId() {
+    public String getCompanyId() {
         return companyId;
     }
 
-    public void setCompanyId(Long companyId) {
+    public void setCompanyId(String companyId) {
         this.companyId = companyId;
     }
 
-    public Long getPersonId() {
+    public String getPersonId() {
         return personId;
     }
 
-    public void setPersonId(Long personId) {
+    public void setPersonId(String personId) {
         this.personId = personId;
     }
 
@@ -32,3 +32,5 @@ public class PersonCommunicationRefsResponse {
         this.communicationIds = communicationIds;
     }
 }
+
+

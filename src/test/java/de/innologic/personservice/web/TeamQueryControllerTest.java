@@ -41,8 +41,8 @@ class TeamQueryControllerTest {
 
     @Test
     void shouldListTeams_whenValidRequest() throws Exception {
-        when(teamQueryService.listTeams(eq(1L), isNull(), eq(false), eq(PageRequest.of(0, 20))))
-                .thenReturn(new PageImpl<>(List.of(sampleTeamResponse(20L, 1L)), PageRequest.of(0, 20), 1));
+        when(teamQueryService.listTeams(eq("1"), isNull(), eq(false), eq(PageRequest.of(0, 20))))
+                .thenReturn(new PageImpl<>(List.of(sampleTeamResponse(20L, "1")), PageRequest.of(0, 20), 1));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/teams", 1L))
                 .andExpect(status().isOk())
@@ -65,7 +65,7 @@ class TeamQueryControllerTest {
 
     @Test
     void shouldGetTeam_whenExists() throws Exception {
-        when(teamQueryService.getTeam(1L, 20L)).thenReturn(sampleTeamResponse(20L, 1L));
+        when(teamQueryService.getTeam("1", 20L)).thenReturn(sampleTeamResponse(20L, "1"));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", 1L, 20L))
                 .andExpect(status().isOk())
@@ -77,7 +77,7 @@ class TeamQueryControllerTest {
 
     @Test
     void shouldReturn404_whenTeamNotFound() throws Exception {
-        when(teamQueryService.getTeam(1L, 404L)).thenThrow(new NotFoundException("Team not found"));
+        when(teamQueryService.getTeam("1", 404L)).thenThrow(new NotFoundException("Team not found"));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", 1L, 404L))
                 .andExpect(status().isNotFound())
@@ -91,12 +91,12 @@ class TeamQueryControllerTest {
     void shouldGetTeamMembers_whenTeamExists() throws Exception {
         TeamMemberResponse member = new TeamMemberResponse();
         member.setId(99L);
-        member.setCompanyId(1L);
+        member.setCompanyId("1");
         member.setTeamId(20L);
         member.setPersonId(10L);
         member.setCreatedAt(LocalDateTime.now().minusDays(1));
         member.setModifiedAt(LocalDateTime.now());
-        when(teamQueryService.getTeamMembers(1L, 20L)).thenReturn(List.of(member));
+        when(teamQueryService.getTeamMembers("1", 20L)).thenReturn(List.of(member));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}/members", 1L, 20L))
                 .andExpect(status().isOk())
@@ -109,7 +109,7 @@ class TeamQueryControllerTest {
 
     @Test
     void shouldReturn404_whenGetTeamMembersTeamNotFound() throws Exception {
-        when(teamQueryService.getTeamMembers(1L, 404L)).thenThrow(new NotFoundException("Team not found"));
+        when(teamQueryService.getTeamMembers("1", 404L)).thenThrow(new NotFoundException("Team not found"));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}/members", 1L, 404L))
                 .andExpect(status().isNotFound())
@@ -119,7 +119,7 @@ class TeamQueryControllerTest {
                 .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/404/members"));
     }
 
-    private TeamResponse sampleTeamResponse(Long id, Long companyId) {
+    private TeamResponse sampleTeamResponse(Long id, String companyId) {
         TeamResponse response = new TeamResponse();
         response.setId(id);
         response.setCompanyId(companyId);
@@ -131,4 +131,8 @@ class TeamQueryControllerTest {
         return response;
     }
 }
+
+
+
+
 

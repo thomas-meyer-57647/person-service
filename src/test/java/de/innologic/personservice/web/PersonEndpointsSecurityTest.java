@@ -46,9 +46,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({GlobalExceptionHandler.class, SecurityConfig.class, SecurityProblemSupport.class})
 class PersonEndpointsSecurityTest {
 
-    private static final long COMPANY_ID = 100L;
-    private static final long OTHER_COMPANY_ID = 200L;
-    private static final long PERSON_ID = 10L;
+    private static final String COMPANY_ID = "100";
+    private static final String OTHER_COMPANY_ID = "200";
+    private static final String PERSON_ID = "10";
 
     @Autowired
     private MockMvc mockMvc;
@@ -70,7 +70,7 @@ class PersonEndpointsSecurityTest {
     @Test
     void getPersons_shouldReturn200_withJwtTenantAndReadScope() throws Exception {
         when(personQueryService.listPersons(eq(COMPANY_ID), isNull(), eq(false), eq(PageRequest.of(0, 20))))
-                .thenReturn(new PageImpl<>(List.of(samplePersonResponse(PERSON_ID, COMPANY_ID)), PageRequest.of(0, 20), 1));
+                .thenReturn(new PageImpl<>(List.of(samplePersonResponse(10L, COMPANY_ID)), PageRequest.of(0, 20), 1));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/persons", COMPANY_ID)
                         .with(jwtWithTenantAndScope(COMPANY_ID, "person:read")))
@@ -144,7 +144,7 @@ class PersonEndpointsSecurityTest {
     @Test
     void updatePerson_shouldReturn200_withJwtTenantAndWriteScope() throws Exception {
         when(personCommandService.updatePerson(eq(COMPANY_ID), eq(PERSON_ID), any(PersonUpdateRequest.class), eq(null)))
-                .thenReturn(samplePersonResponse(PERSON_ID, COMPANY_ID));
+                .thenReturn(samplePersonResponse(10L, COMPANY_ID));
 
         mockMvc.perform(patch("/api/v1/companies/{companyId}/persons/{personId}", COMPANY_ID, PERSON_ID)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -184,7 +184,7 @@ class PersonEndpointsSecurityTest {
     @Test
     void trashPerson_shouldReturn200_withJwtTenantAndWriteScope() throws Exception {
         when(personCommandService.trashPerson(COMPANY_ID, PERSON_ID, null))
-                .thenReturn(samplePersonResponse(PERSON_ID, COMPANY_ID));
+                .thenReturn(samplePersonResponse(10L, COMPANY_ID));
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/persons/{personId}/trash", COMPANY_ID, PERSON_ID)
                         .with(jwtWithTenantAndScope(COMPANY_ID, "person:write")))
@@ -216,7 +216,7 @@ class PersonEndpointsSecurityTest {
     @Test
     void restorePerson_shouldReturn200_withJwtTenantAndWriteScope() throws Exception {
         when(personCommandService.restorePerson(COMPANY_ID, PERSON_ID, null))
-                .thenReturn(samplePersonResponse(PERSON_ID, COMPANY_ID));
+                .thenReturn(samplePersonResponse(10L, COMPANY_ID));
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/persons/{personId}/restore", COMPANY_ID, PERSON_ID)
                         .with(jwtWithTenantAndScope(COMPANY_ID, "person:write")))
@@ -247,7 +247,7 @@ class PersonEndpointsSecurityTest {
 
     @Test
     void getPerson_shouldReturn200_withJwtTenantAndReadScope() throws Exception {
-        when(personQueryService.getPerson(COMPANY_ID, PERSON_ID)).thenReturn(samplePersonResponse(PERSON_ID, COMPANY_ID));
+        when(personQueryService.getPerson(COMPANY_ID, PERSON_ID)).thenReturn(samplePersonResponse(10L, COMPANY_ID));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/persons/{personId}", COMPANY_ID, PERSON_ID)
                         .with(jwtWithTenantAndScope(COMPANY_ID, "person:read")))
@@ -278,7 +278,7 @@ class PersonEndpointsSecurityTest {
 
     @Test
     void getPerson_shouldReturn404_whenPersonNotFound() throws Exception {
-        when(personQueryService.getPerson(COMPANY_ID, 999L)).thenThrow(new NotFoundException("Person not found"));
+        when(personQueryService.getPerson(COMPANY_ID, "999")).thenThrow(new NotFoundException("Person not found"));
 
         mockMvc.perform(get("/api/v1/companies/{companyId}/persons/{personId}", COMPANY_ID, 999L)
                         .with(jwtWithTenantAndScope(COMPANY_ID, "person:read")))
@@ -366,19 +366,19 @@ class PersonEndpointsSecurityTest {
                 .andExpect(status().isBadRequest());
     }
 
-    private RequestPostProcessor jwtWithTenantAndScope(long tenant, String scope) {
-        return jwt().jwt(j -> j.claim("tenant_id", String.valueOf(tenant)).claim("scp", List.of(scope)))
+    private RequestPostProcessor jwtWithTenantAndScope(String tenant, String scope) {
+        return jwt().jwt(j -> j.claim("tenant_id", tenant).claim("scp", List.of(scope)))
                 .authorities(jwtScopesConverter);
     }
 
-    private RequestPostProcessor jwtWithTenantNoScope(long tenant) {
-        return jwt().jwt(j -> j.claim("tenant_id", String.valueOf(tenant)));
+    private RequestPostProcessor jwtWithTenantNoScope(String tenant) {
+        return jwt().jwt(j -> j.claim("tenant_id", tenant));
     }
 
-    private String validCreateBody(long companyId) {
+    private String validCreateBody(String companyId) {
         return """
                 {
-                  "companyId": %d,
+                  "companyId": "%s",
                   "givenName": "Max",
                   "displayName": "Max Mustermann"
                 }
@@ -401,7 +401,7 @@ class PersonEndpointsSecurityTest {
                 """;
     }
 
-    private PersonResponse samplePersonResponse(Long id, Long companyId) {
+    private PersonResponse samplePersonResponse(Long id, String companyId) {
         PersonResponse response = new PersonResponse();
         response.setId(id);
         response.setCompanyId(companyId);
@@ -411,7 +411,7 @@ class PersonEndpointsSecurityTest {
         return response;
     }
 
-    private PersonCommunicationRefsResponse sampleCommunicationRefsResponse(Long companyId, Long personId) {
+    private PersonCommunicationRefsResponse sampleCommunicationRefsResponse(String companyId, String personId) {
         PersonCommunicationRefsResponse response = new PersonCommunicationRefsResponse();
         response.setCompanyId(companyId);
         response.setPersonId(personId);
@@ -419,3 +419,8 @@ class PersonEndpointsSecurityTest {
         return response;
     }
 }
+
+
+
+
+
