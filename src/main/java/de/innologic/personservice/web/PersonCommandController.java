@@ -4,16 +4,17 @@ import de.innologic.personservice.dto.PersonCreateRequest;
 import de.innologic.personservice.dto.PersonResponse;
 import de.innologic.personservice.dto.PersonUpdateRequest;
 import de.innologic.personservice.service.person.PersonCommandService;
+import de.innologic.personservice.web.error.ProblemDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/companies/{companyId}/persons")
 @Tag(name = "Persons Command")
+@SecurityRequirement(name = "bearerAuth")
 public class PersonCommandController {
 
     private final PersonCommandService personCommandService;
@@ -43,11 +45,11 @@ public class PersonCommandController {
             @ApiResponse(responseCode = "201", description = "Person created (contactOwnerType stays PERSON).",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = PersonResponse.class))),
             @ApiResponse(responseCode = "400", description = "Validation failed or companyId mismatch.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse createPerson(
@@ -69,13 +71,13 @@ public class PersonCommandController {
             @ApiResponse(responseCode = "200", description = "Person updated.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = PersonResponse.class))),
             @ApiResponse(responseCode = "400", description = "Validation failed.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Person not found.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse updatePerson(
@@ -98,11 +100,11 @@ public class PersonCommandController {
             @ApiResponse(responseCode = "200", description = "Person trashed.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = PersonResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Person not found.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse trashPerson(
@@ -122,11 +124,11 @@ public class PersonCommandController {
             @ApiResponse(responseCode = "200", description = "Person restored.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = PersonResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Person not found.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_person:write')")
     public PersonResponse restorePerson(

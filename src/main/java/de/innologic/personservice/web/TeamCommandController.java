@@ -6,16 +6,17 @@ import de.innologic.personservice.dto.TeamMemberResponse;
 import de.innologic.personservice.dto.TeamResponse;
 import de.innologic.personservice.dto.TeamUpdateRequest;
 import de.innologic.personservice.service.team.TeamCommandService;
+import de.innologic.personservice.web.error.ProblemDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/companies/{companyId}/teams")
 @Tag(name = "Teams Command")
+@SecurityRequirement(name = "bearerAuth")
 public class TeamCommandController {
 
     private final TeamCommandService teamCommandService;
@@ -46,13 +48,13 @@ public class TeamCommandController {
             @ApiResponse(responseCode = "201", description = "Team created.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamResponse.class))),
             @ApiResponse(responseCode = "400", description = "Validation failed or companyId mismatch.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "409", description = "Team name already exists in the tenant.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse createTeam(
@@ -74,15 +76,15 @@ public class TeamCommandController {
             @ApiResponse(responseCode = "200", description = "Team updated.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamResponse.class))),
             @ApiResponse(responseCode = "400", description = "Validation failed.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Team not found.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "409", description = "Team name already exists in the tenant.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse updateTeam(
@@ -106,11 +108,11 @@ public class TeamCommandController {
             @ApiResponse(responseCode = "200", description = "Team trashed.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Team not found.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse trashTeam(
@@ -131,11 +133,11 @@ public class TeamCommandController {
             @ApiResponse(responseCode = "200", description = "Team restored.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Team not found.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamResponse restoreTeam(
@@ -157,15 +159,15 @@ public class TeamCommandController {
             @ApiResponse(responseCode = "201", description = "Membership created.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamMemberResponse.class))),
             @ApiResponse(responseCode = "400", description = "Validation failed.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Team or person not found.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "409", description = "Person already an active member of this team.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public TeamMemberResponse addMember(
@@ -189,11 +191,11 @@ public class TeamCommandController {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Membership removed."),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Team, person, or active membership not found.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_team:write')")
     public void removeMember(

@@ -23,9 +23,11 @@ public class SecurityProblemSupport implements AuthenticationEntryPoint, AccessD
     private static final String TENANT_MISMATCH = "TENANT_MISMATCH";
 
     private final ObjectMapper objectMapper;
+    private final ProblemDetailFactory problemDetailFactory;
 
-    public SecurityProblemSupport(ObjectMapper objectMapper) {
+    public SecurityProblemSupport(ObjectMapper objectMapper, ProblemDetailFactory problemDetailFactory) {
         this.objectMapper = objectMapper;
+        this.problemDetailFactory = problemDetailFactory;
     }
 
     @Override
@@ -38,7 +40,7 @@ public class SecurityProblemSupport implements AuthenticationEntryPoint, AccessD
             writeInvalidTokenProblem(request, response);
             return;
         }
-        writeProblem(response, request, HttpStatus.UNAUTHORIZED, "Unauthorized", AUTHENTICATION_REQUIRED);
+        writeProblem(request, response, HttpStatus.UNAUTHORIZED, "Unauthorized", AUTHENTICATION_REQUIRED);
     }
 
     @Override
@@ -51,13 +53,13 @@ public class SecurityProblemSupport implements AuthenticationEntryPoint, AccessD
             writeTenantMismatchProblem(request, response);
             return;
         }
-        writeProblem(response, request, HttpStatus.FORBIDDEN, "Forbidden", ACCESS_DENIED);
+        writeProblem(request, response, HttpStatus.FORBIDDEN, "Forbidden", ACCESS_DENIED);
     }
 
     public void writeInvalidTokenProblem(HttpServletRequest request, HttpServletResponse response) throws IOException {
         writeProblem(
-                response,
                 request,
+                response,
                 HttpStatus.UNAUTHORIZED,
                 "Unauthorized",
                 INVALID_TOKEN,
@@ -67,8 +69,8 @@ public class SecurityProblemSupport implements AuthenticationEntryPoint, AccessD
 
     public void writeTenantMismatchProblem(HttpServletRequest request, HttpServletResponse response) throws IOException {
         writeProblem(
-                response,
                 request,
+                response,
                 HttpStatus.FORBIDDEN,
                 "Forbidden",
                 TENANT_MISMATCH,
@@ -77,30 +79,26 @@ public class SecurityProblemSupport implements AuthenticationEntryPoint, AccessD
     }
 
     private void writeProblem(
-            HttpServletResponse response,
             HttpServletRequest request,
+            HttpServletResponse response,
             HttpStatus status,
             String title,
             String errorCode
     ) throws IOException {
-        writeProblem(response, request, status, title, errorCode, status == HttpStatus.UNAUTHORIZED
+        writeProblem(request, response, status, title, errorCode, status == HttpStatus.UNAUTHORIZED
                 ? "Authentication is required to access this resource."
                 : "You are not allowed to access this resource.");
     }
 
     private void writeProblem(
-            HttpServletResponse response,
             HttpServletRequest request,
+            HttpServletResponse response,
             HttpStatus status,
             String title,
             String errorCode,
             String detail
     ) throws IOException {
-        ProblemDetail problem = ProblemDetail.forStatus(status);
-        problem.setTitle(title);
-        problem.setDetail(detail);
-        problem.setInstance(java.net.URI.create(request.getRequestURI()));
-        problem.setProperty("errorCode", errorCode);
+        ProblemDetail problem = problemDetailFactory.createProblem(status, title, detail, errorCode, request, null);
 
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);

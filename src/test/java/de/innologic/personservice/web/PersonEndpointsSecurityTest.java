@@ -10,6 +10,7 @@ import de.innologic.personservice.service.person.PersonCommandService;
 import de.innologic.personservice.service.person.PersonCommunicationRefService;
 import de.innologic.personservice.service.person.PersonQueryService;
 import de.innologic.personservice.web.error.GlobalExceptionHandler;
+import de.innologic.personservice.web.error.InvalidTokenAuthenticationException;
 import de.innologic.personservice.web.error.NotFoundException;
 import de.innologic.personservice.web.error.SecurityProblemSupport;
 import org.junit.jupiter.api.Test;
@@ -85,9 +86,26 @@ class PersonEndpointsSecurityTest {
 
     @Test
     void getPersons_shouldReturn403_withoutReadScope() throws Exception {
+        String personsPath = "/api/v1/companies/" + COMPANY_ID + "/persons";
         mockMvc.perform(get("/api/v1/companies/{companyId}/persons", COMPANY_ID)
                         .with(jwtWithTenantNoScope(COMPANY_ID)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"))
+                .andExpect(jsonPath("$.path").value(personsPath));
+    }
+
+    @Test
+    void getPersons_shouldReturn401_withInvalidToken() throws Exception {
+        String personsPath = "/api/v1/companies/" + COMPANY_ID + "/persons";
+        when(jwtDecoder.decode("bad-token")).thenThrow(new InvalidTokenAuthenticationException("token invalid"));
+
+        mockMvc.perform(get("/api/v1/companies/{companyId}/persons", COMPANY_ID)
+                        .header("Authorization", "Bearer bad-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errorCode").value("INVALID_TOKEN"))
+                .andExpect(jsonPath("$.path").value(personsPath))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
@@ -363,7 +381,11 @@ class PersonEndpointsSecurityTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}")
                         .with(jwtWithTenantAndScope(COMPANY_ID, "person:write")))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.violations").isArray())
+                .andExpect(jsonPath("$.violations[0].field").value("communicationIds"));
     }
 
     private RequestPostProcessor jwtWithTenantAndScope(String tenant, String scope) {

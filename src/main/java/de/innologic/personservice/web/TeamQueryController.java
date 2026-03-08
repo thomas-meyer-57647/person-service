@@ -3,12 +3,14 @@ package de.innologic.personservice.web;
 import de.innologic.personservice.dto.TeamMemberResponse;
 import de.innologic.personservice.dto.TeamResponse;
 import de.innologic.personservice.service.team.TeamQueryService;
+import de.innologic.personservice.web.error.ProblemDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,11 +23,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import org.springframework.http.ProblemDetail;
 
 @RestController
 @RequestMapping("/api/v1/companies/{companyId}/teams")
 @Tag(name = "Teams Query")
+@SecurityRequirement(name = "bearerAuth")
 public class TeamQueryController {
 
     private final TeamQueryService teamQueryService;
@@ -40,9 +42,9 @@ public class TeamQueryController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Page of teams."),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_team:read')")
     public Page<TeamResponse> listTeams(
@@ -62,11 +64,11 @@ public class TeamQueryController {
             @ApiResponse(responseCode = "200", description = "Team details.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Team not found.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_team:read')")
     public TeamResponse getTeam(
@@ -83,11 +85,11 @@ public class TeamQueryController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "List of memberships."),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Team not found.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_team:read')")
     public List<TeamMemberResponse> getTeamMembers(

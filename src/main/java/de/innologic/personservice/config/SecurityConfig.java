@@ -1,7 +1,9 @@
 package de.innologic.personservice.config;
 
+import de.innologic.personservice.web.error.ProblemDetailFactory;
 import de.innologic.personservice.web.error.SecurityProblemSupport;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -10,6 +12,12 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
@@ -37,6 +45,12 @@ public class SecurityConfig {
     @Bean
     JwtScopesConverter jwtScopesConverter() {
         return new JwtScopesConverter();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ProblemDetailFactory.class)
+    ProblemDetailFactory problemDetailFactory() {
+        return new ProblemDetailFactory();
     }
 
     @Bean
@@ -82,5 +96,18 @@ public class SecurityConfig {
                 .addFilterAfter(tenantGuardFilter, AuthorizationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(JwtDecoder.class)
+    JwtDecoder jwtDecoder(
+            @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") String jwkSetUri,
+            @Value("${app.security.required-audience:person-service}") String requiredAudience
+    ) {
+        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        OAuth2TokenValidator<Jwt> defaultValidator = JwtValidators.createDefault();
+        OAuth2TokenValidator<Jwt> audienceValidator = new JwtAudienceValidator(requiredAudience);
+        jwtDecoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(defaultValidator, audienceValidator));
+        return jwtDecoder;
     }
 }

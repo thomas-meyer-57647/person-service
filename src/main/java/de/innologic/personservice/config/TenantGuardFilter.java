@@ -60,6 +60,11 @@ public class TenantGuardFilter extends OncePerRequestFilter {
         }
 
         String companyIdFromPath = matcher.group(1);
+        String headerTenant = normalizeTenant(request.getHeader("X-Tenant-Id"));
+        if (headerTenant != null && !headerTenant.equals(companyIdFromPath)) {
+            securityProblemSupport.writeTenantMismatchProblem(request, response);
+            return;
+        }
         String tenantFromToken = normalizeTenant(jwt.getClaim(tenantClaimName));
 
         if (tenantFromToken == null) {
@@ -67,6 +72,10 @@ public class TenantGuardFilter extends OncePerRequestFilter {
             return;
         }
         if (!tenantFromToken.equals(companyIdFromPath)) {
+            securityProblemSupport.writeTenantMismatchProblem(request, response);
+            return;
+        }
+        if (headerTenant != null && !headerTenant.equals(tenantFromToken)) {
             securityProblemSupport.writeTenantMismatchProblem(request, response);
             return;
         }

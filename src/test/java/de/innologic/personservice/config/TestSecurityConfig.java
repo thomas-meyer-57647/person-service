@@ -2,7 +2,9 @@ package de.innologic.personservice.config;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import de.innologic.personservice.web.error.ProblemDetailFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -36,6 +38,12 @@ public class TestSecurityConfig {
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(3600))
                 .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ProblemDetailFactory.class)
+    ProblemDetailFactory problemDetailFactory() {
+        return new ProblemDetailFactory();
     }
 }
 

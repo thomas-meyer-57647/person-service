@@ -2,12 +2,14 @@ package de.innologic.personservice.web;
 
 import de.innologic.personservice.dto.PersonResponse;
 import de.innologic.personservice.service.person.PersonQueryService;
+import de.innologic.personservice.web.error.ProblemDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,11 +20,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.http.ProblemDetail;
 
 @RestController
 @RequestMapping("/api/v1/companies/{companyId}/persons")
 @Tag(name = "Persons Query")
+@SecurityRequirement(name = "bearerAuth")
 public class PersonQueryController {
 
     private final PersonQueryService personQueryService;
@@ -38,11 +40,11 @@ public class PersonQueryController {
             @ApiResponse(responseCode = "200", description = "Page of persons.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = PersonResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request parameter or pagination argument.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_person:read')")
     public Page<PersonResponse> listPersons(
@@ -64,11 +66,11 @@ public class PersonQueryController {
             @ApiResponse(responseCode = "200", description = "Person found.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = PersonResponse.class))),
             @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "403", description = "Insufficient scope.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class))),
             @ApiResponse(responseCode = "404", description = "Person not found or trashed.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetailResponse.class)))
     })
     @PreAuthorize("hasAuthority('SCOPE_person:read')")
     public PersonResponse getPerson(
