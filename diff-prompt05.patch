@@ -1,0 +1,1297 @@
+diff --git a/src/main/java/de/innologic/personservice/domain/Team.java b/src/main/java/de/innologic/personservice/domain/Team.java
+index 2ba2585..fd5cabe 100644
+--- a/src/main/java/de/innologic/personservice/domain/Team.java
++++ b/src/main/java/de/innologic/personservice/domain/Team.java
+@@ -14,12 +14,23 @@ import jakarta.persistence.UniqueConstraint;
+ )
+ public class Team extends BaseEntity {
+ 
++    @Column(name = "team_id", length = 36, nullable = false, unique = true)
++    private String teamId;
++
+     @Column(name = "name", nullable = false, length = 160)
+     private String name;
+ 
+     @Column(name = "description")
+     private String description;
+ 
++    public String getTeamId() {
++        return teamId;
++    }
++
++    public void setTeamId(String teamId) {
++        this.teamId = teamId;
++    }
++
+     public String getName() {
+         return name;
+     }
+diff --git a/src/main/java/de/innologic/personservice/domain/TeamMember.java b/src/main/java/de/innologic/personservice/domain/TeamMember.java
+index 29cb0bd..f4656f7 100644
+--- a/src/main/java/de/innologic/personservice/domain/TeamMember.java
++++ b/src/main/java/de/innologic/personservice/domain/TeamMember.java
+@@ -19,6 +19,9 @@ import java.time.LocalDateTime;
+ )
+ public class TeamMember extends BaseEntity {
+ 
++    @Column(name = "membership_id", length = 36, nullable = false, unique = true)
++    private String membershipId;
++
+     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+     @JoinColumn(name = "team_id", nullable = false)
+     private Team team;
+@@ -36,6 +39,9 @@ public class TeamMember extends BaseEntity {
+     @Column(name = "left_at")
+     private LocalDateTime leftAt;
+ 
++    @Column(name = "is_primary", nullable = false)
++    private Boolean isPrimary = Boolean.FALSE;
++
+     public Team getTeam() {
+         return team;
+     }
+@@ -75,4 +81,20 @@ public class TeamMember extends BaseEntity {
+     public void setLeftAt(LocalDateTime leftAt) {
+         this.leftAt = leftAt;
+     }
++
++    public Boolean getIsPrimary() {
++        return isPrimary;
++    }
++
++    public void setIsPrimary(Boolean isPrimary) {
++        this.isPrimary = isPrimary;
++    }
++
++    public String getMembershipId() {
++        return membershipId;
++    }
++
++    public void setMembershipId(String membershipId) {
++        this.membershipId = membershipId;
++    }
+ }
+diff --git a/src/main/java/de/innologic/personservice/dto/TeamCreateRequest.java b/src/main/java/de/innologic/personservice/dto/TeamCreateRequest.java
+index 81206dc..fb8e130 100644
+--- a/src/main/java/de/innologic/personservice/dto/TeamCreateRequest.java
++++ b/src/main/java/de/innologic/personservice/dto/TeamCreateRequest.java
+@@ -3,16 +3,21 @@ package de.innologic.personservice.dto;
+ import jakarta.validation.constraints.NotBlank;
+ import jakarta.validation.constraints.NotNull;
+ import jakarta.validation.constraints.Size;
++import io.swagger.v3.oas.annotations.media.Schema;
+ 
++@Schema(name = "TeamCreateRequest", description = "Payload required to create a new tenant-bound team.")
+ public class TeamCreateRequest {
+ 
+     @NotNull
++    @Schema(description = "Tenant identifier; must match the companyId in the request path.", example = "company-123", requiredMode = Schema.RequiredMode.REQUIRED)
+     private String companyId;
+ 
+     @NotBlank
++    @Schema(description = "Human-readable label for the team, unique inside the tenant.", example = "Platform Engineering", requiredMode = Schema.RequiredMode.REQUIRED)
+     @Size(max = 160)
+     private String name;
+ 
++    @Schema(description = "Optional longer description to explain the team's responsibility.", example = "Platform team responsible for shared infrastructure.")
+     private String description;
+ 
+     public String getCompanyId() {
+diff --git a/src/main/java/de/innologic/personservice/dto/TeamMemberAddRequest.java b/src/main/java/de/innologic/personservice/dto/TeamMemberAddRequest.java
+index a60c860..47270f0 100644
+--- a/src/main/java/de/innologic/personservice/dto/TeamMemberAddRequest.java
++++ b/src/main/java/de/innologic/personservice/dto/TeamMemberAddRequest.java
+@@ -1,25 +1,33 @@
+ package de.innologic.personservice.dto;
+ 
+-import jakarta.validation.constraints.NotNull;
++import jakarta.validation.constraints.NotBlank;
+ import jakarta.validation.constraints.Size;
++import io.swagger.v3.oas.annotations.media.Schema;
+ 
+ import java.time.LocalDateTime;
+ 
++@Schema(name = "TeamMemberAddRequest", description = "Request to add a person to a specific team.")
+ public class TeamMemberAddRequest {
+ 
+-    @NotNull
+-    private Long personId;
++    @NotBlank
++    @Schema(description = "Public personId that identifies the person to add.", example = "beb65d9f-8f4b-4c1f-9b0d-1c3ffc572123", requiredMode = Schema.RequiredMode.REQUIRED)
++    private String personId;
+ 
+     @Size(max = 100)
++    @Schema(description = "Optional role or title for the member within the team.", example = "Developer")
+     private String role;
+ 
++    @Schema(description = "UTC timestamp when the person joined the team; defaults to the current timestamp when omitted.", example = "2026-01-01T10:00:00")
+     private LocalDateTime joinedAt;
+ 
+-    public Long getPersonId() {
++    @Schema(description = "Optional indicator if this membership represents the person's primary team.", example = "true")
++    private Boolean isPrimary;
++
++    public String getPersonId() {
+         return personId;
+     }
+ 
+-    public void setPersonId(Long personId) {
++    public void setPersonId(String personId) {
+         this.personId = personId;
+     }
+ 
+@@ -38,4 +46,12 @@ public class TeamMemberAddRequest {
+     public void setJoinedAt(LocalDateTime joinedAt) {
+         this.joinedAt = joinedAt;
+     }
+-}
+\ No newline at end of file
++
++    public Boolean getIsPrimary() {
++        return isPrimary;
++    }
++
++    public void setIsPrimary(Boolean isPrimary) {
++        this.isPrimary = isPrimary;
++    }
++}
+diff --git a/src/main/java/de/innologic/personservice/dto/TeamMemberResponse.java b/src/main/java/de/innologic/personservice/dto/TeamMemberResponse.java
+index a6c611a..7d45255 100644
+--- a/src/main/java/de/innologic/personservice/dto/TeamMemberResponse.java
++++ b/src/main/java/de/innologic/personservice/dto/TeamMemberResponse.java
+@@ -1,29 +1,60 @@
+ package de.innologic.personservice.dto;
+ 
++import io.swagger.v3.oas.annotations.media.Schema;
++
+ import java.time.LocalDateTime;
+ 
++@Schema(name = "TeamMemberResponse", description = "Membership details returned for a team.")
+ public class TeamMemberResponse {
+ 
+-    private Long id;
++    @Schema(description = "Public membership identifier.", example = "membership-123", requiredMode = Schema.RequiredMode.REQUIRED)
++    private String membershipId;
++
++    @Schema(description = "Tenant (company) identifier that owns the membership.", example = "company-123", requiredMode = Schema.RequiredMode.REQUIRED)
+     private String companyId;
+-    private Long teamId;
+-    private Long personId;
++
++    @Schema(description = "Public team ID that hosts this membership.", example = "team-123", requiredMode = Schema.RequiredMode.REQUIRED)
++    private String teamId;
++
++    @Schema(description = "Public person ID that participates in the team.", example = "beb65d9f-8f4b-4c1f-9b0d-1c3ffc572123", requiredMode = Schema.RequiredMode.REQUIRED)
++    private String personId;
++
++    @Schema(description = "Role or designation for the member inside the team.", example = "Developer")
+     private String role;
++
++    @Schema(description = "Timestamp when the person joined the team.", example = "2026-01-01T10:00:00Z")
+     private LocalDateTime joinedAt;
++
++    @Schema(description = "Timestamp when the membership ended.", example = "2026-01-02T12:00:00Z")
+     private LocalDateTime leftAt;
++
++    @Schema(description = "Flag that indicates whether this is the person's primary team.", example = "true")
++    private Boolean isPrimary;
++
++    @Schema(description = "Creation timestamp (UTC).", example = "2026-01-01T10:00:00Z")
+     private LocalDateTime createdAt;
++
++    @Schema(description = "Actor that created the membership.")
+     private String createdBy;
++
++    @Schema(description = "Last modification timestamp (UTC).", example = "2026-01-01T11:00:00Z")
+     private LocalDateTime modifiedAt;
++
++    @Schema(description = "Actor that last modified the membership.")
+     private String modifiedBy;
++
++    @Schema(description = "Timestamp when the membership was trashed (or absent if active).", example = "2026-01-02T12:00:00Z")
+     private LocalDateTime trashedAt;
++
++    @Schema(description = "Actor that trashed the membership.")
+     private String trashedBy;
+ 
+-    public Long getId() {
+-        return id;
++    public String getMembershipId() {
++        return membershipId;
+     }
+ 
+-    public void setId(Long id) {
+-        this.id = id;
++    public void setMembershipId(String membershipId) {
++        this.membershipId = membershipId;
+     }
+ 
+     public String getCompanyId() {
+@@ -34,19 +65,19 @@ public class TeamMemberResponse {
+         this.companyId = companyId;
+     }
+ 
+-    public Long getTeamId() {
++    public String getTeamId() {
+         return teamId;
+     }
+ 
+-    public void setTeamId(Long teamId) {
++    public void setTeamId(String teamId) {
+         this.teamId = teamId;
+     }
+ 
+-    public Long getPersonId() {
++    public String getPersonId() {
+         return personId;
+     }
+ 
+-    public void setPersonId(Long personId) {
++    public void setPersonId(String personId) {
+         this.personId = personId;
+     }
+ 
+@@ -74,6 +105,14 @@ public class TeamMemberResponse {
+         this.leftAt = leftAt;
+     }
+ 
++    public Boolean getIsPrimary() {
++        return isPrimary;
++    }
++
++    public void setIsPrimary(Boolean isPrimary) {
++        this.isPrimary = isPrimary;
++    }
++
+     public LocalDateTime getCreatedAt() {
+         return createdAt;
+     }
+@@ -122,4 +161,3 @@ public class TeamMemberResponse {
+         this.trashedBy = trashedBy;
+     }
+ }
+-
+diff --git a/src/main/java/de/innologic/personservice/dto/TeamResponse.java b/src/main/java/de/innologic/personservice/dto/TeamResponse.java
+index 7a37550..45e6e19 100644
+--- a/src/main/java/de/innologic/personservice/dto/TeamResponse.java
++++ b/src/main/java/de/innologic/personservice/dto/TeamResponse.java
+@@ -1,27 +1,41 @@
+ package de.innologic.personservice.dto;
+ 
++import io.swagger.v3.oas.annotations.media.Schema;
++
+ import java.time.LocalDateTime;
+ 
++@Schema(name = "TeamResponse", description = "Tenant-aware team metadata returned by the person-service.")
+ public class TeamResponse {
+ 
+-    private Long id;
++    @Schema(description = "Public team ID used in REST paths and downstream integrations.", example = "team-123", requiredMode = Schema.RequiredMode.REQUIRED)
++    private String teamId;
++
++    @Schema(description = "Tenant (company) identifier owning the team.", example = "company-123", requiredMode = Schema.RequiredMode.REQUIRED)
+     private String companyId;
++
++    @Schema(description = "Human-friendly team name.", example = "Platform Engineering", requiredMode = Schema.RequiredMode.REQUIRED)
+     private String name;
++
++    @Schema(description = "Optional description of the team's responsibilities.", example = "Builds shared platform capabilities.")
+     private String description;
++
++    @Schema(description = "Record creation timestamp (UTC).", example = "2026-01-01T10:00:00Z")
+     private LocalDateTime createdAt;
++
++    @Schema(description = "Actor that created the team.")
+     private String createdBy;
++
++    @Schema(description = "Last modification timestamp (UTC).", example = "2026-01-01T11:00:00Z")
+     private LocalDateTime modifiedAt;
++
++    @Schema(description = "Actor that last modified the team.")
+     private String modifiedBy;
+-    private LocalDateTime trashedAt;
+-    private String trashedBy;
+ 
+-    public Long getId() {
+-        return id;
+-    }
++    @Schema(description = "Timestamp when the team was trashed (or absent if active).", example = "2026-01-02T12:00:00Z")
++    private LocalDateTime trashedAt;
+ 
+-    public void setId(Long id) {
+-        this.id = id;
+-    }
++    @Schema(description = "Actor that trashed the team.")
++    private String trashedBy;
+ 
+     public String getCompanyId() {
+         return companyId;
+@@ -94,5 +108,13 @@ public class TeamResponse {
+     public void setTrashedBy(String trashedBy) {
+         this.trashedBy = trashedBy;
+     }
++
++    public String getTeamId() {
++        return teamId;
++    }
++
++    public void setTeamId(String teamId) {
++        this.teamId = teamId;
++    }
+ }
+ 
+diff --git a/src/main/java/de/innologic/personservice/dto/TeamUpdateRequest.java b/src/main/java/de/innologic/personservice/dto/TeamUpdateRequest.java
+index a7c6cb4..353f5a6 100644
+--- a/src/main/java/de/innologic/personservice/dto/TeamUpdateRequest.java
++++ b/src/main/java/de/innologic/personservice/dto/TeamUpdateRequest.java
+@@ -1,12 +1,16 @@
+ package de.innologic.personservice.dto;
+ 
+ import jakarta.validation.constraints.Size;
++import io.swagger.v3.oas.annotations.media.Schema;
+ 
++@Schema(name = "TeamUpdateRequest", description = "Fields that can be updated on an existing team.")
+ public class TeamUpdateRequest {
+ 
+     @Size(max = 160)
++    @Schema(description = "New name for the team; must stay unique inside the tenant.", example = "Platform Engineering")
+     private String name;
+ 
++    @Schema(description = "New description for the team.", example = "Platform team responsible for automation.")
+     private String description;
+ 
+     public String getName() {
+@@ -24,4 +28,4 @@ public class TeamUpdateRequest {
+     public void setDescription(String description) {
+         this.description = description;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/src/main/java/de/innologic/personservice/mapper/TeamMapper.java b/src/main/java/de/innologic/personservice/mapper/TeamMapper.java
+index ed4d71c..7445c3d 100644
+--- a/src/main/java/de/innologic/personservice/mapper/TeamMapper.java
++++ b/src/main/java/de/innologic/personservice/mapper/TeamMapper.java
+@@ -15,12 +15,14 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
+ public interface TeamMapper {
+ 
+     @Mapping(target = "id", ignore = true)
++    @Mapping(target = "teamId", ignore = true)
+     @Mapping(target = "audit", ignore = true)
+     Team toEntity(TeamCreateRequest request);
+ 
+     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+     @Mapping(target = "id", ignore = true)
+     @Mapping(target = "companyId", ignore = true)
++    @Mapping(target = "teamId", ignore = true)
+     @Mapping(target = "audit", ignore = true)
+     void updateEntity(TeamUpdateRequest request, @MappingTarget Team team);
+ 
+@@ -30,5 +32,6 @@ public interface TeamMapper {
+     @Mapping(target = "modifiedBy", source = "audit.modifiedBy")
+     @Mapping(target = "trashedAt", source = "audit.trashedAt")
+     @Mapping(target = "trashedBy", source = "audit.trashedBy")
++    @Mapping(target = "teamId", source = "teamId")
+     TeamResponse toResponse(Team team);
+ }
+diff --git a/src/main/java/de/innologic/personservice/mapper/TeamMemberMapper.java b/src/main/java/de/innologic/personservice/mapper/TeamMemberMapper.java
+index 37a0eff..d84365a 100644
+--- a/src/main/java/de/innologic/personservice/mapper/TeamMemberMapper.java
++++ b/src/main/java/de/innologic/personservice/mapper/TeamMemberMapper.java
+@@ -18,6 +18,8 @@ public interface TeamMemberMapper {
+     @Mapping(target = "teamRole", source = "role")
+     @Mapping(target = "leftAt", ignore = true)
+     @Mapping(target = "audit", ignore = true)
++    @Mapping(target = "joinedAt", source = "joinedAt")
++    @Mapping(target = "isPrimary", source = "isPrimary")
+     TeamMember toEntity(TeamMemberAddRequest request);
+ 
+     @Mapping(target = "id", ignore = true)
+@@ -27,10 +29,14 @@ public interface TeamMemberMapper {
+     @Mapping(target = "teamRole", source = "role")
+     @Mapping(target = "leftAt", ignore = true)
+     @Mapping(target = "audit", ignore = true)
++    @Mapping(target = "joinedAt", source = "joinedAt")
++    @Mapping(target = "isPrimary", source = "isPrimary")
+     void updateFromAddRequest(TeamMemberAddRequest request, @MappingTarget TeamMember teamMember);
+ 
+-    @Mapping(target = "teamId", source = "team.id")
+-    @Mapping(target = "personId", source = "person.id")
++    @Mapping(target = "membershipId", source = "membershipId")
++    @Mapping(target = "teamId", source = "team.teamId")
++    @Mapping(target = "personId", source = "person.publicId")
++    @Mapping(target = "isPrimary", source = "isPrimary")
+     @Mapping(target = "role", source = "teamRole")
+     @Mapping(target = "createdAt", source = "audit.createdAt")
+     @Mapping(target = "createdBy", source = "audit.createdBy")
+diff --git a/src/main/java/de/innologic/personservice/repository/TeamRepository.java b/src/main/java/de/innologic/personservice/repository/TeamRepository.java
+index 9b96fd5..236892a 100644
+--- a/src/main/java/de/innologic/personservice/repository/TeamRepository.java
++++ b/src/main/java/de/innologic/personservice/repository/TeamRepository.java
+@@ -26,6 +26,10 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
+ 
+     Optional<Team> findByIdAndCompanyId(Long id, String companyId);
+ 
++    Optional<Team> findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(String teamId, String companyId);
++
++    Optional<Team> findByTeamIdAndCompanyId(String teamId, String companyId);
++
+     Optional<Team> findByCompanyIdAndNameAndAudit_TrashedAtIsNull(String companyId, String name);
+ 
+     @Query("""
+diff --git a/src/main/java/de/innologic/personservice/service/team/TeamCommandService.java b/src/main/java/de/innologic/personservice/service/team/TeamCommandService.java
+index 0ece28f..19c1553 100644
+--- a/src/main/java/de/innologic/personservice/service/team/TeamCommandService.java
++++ b/src/main/java/de/innologic/personservice/service/team/TeamCommandService.java
+@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
+ import org.springframework.transaction.annotation.Transactional;
+ 
+ import java.time.LocalDateTime;
++import java.util.UUID;
+ 
+ @Service
+ @Transactional
+@@ -57,15 +58,16 @@ public class TeamCommandService {
+                     throw new ConflictException("Team name already exists in this company.");
+         });
+         Team team = teamMapper.toEntity(request);
++        team.setTeamId(UUID.randomUUID().toString());
+         team.setCompanyId(companyId);
+         team.getAudit().setCreatedBy(actor);
+         team.getAudit().setModifiedBy(actor);
+         return teamMapper.toResponse(teamRepository.save(team));
+     }
+ 
+-    public TeamResponse updateTeam(String companyId, Long teamId, TeamUpdateRequest request, String actorId) {
++    public TeamResponse updateTeam(String companyId, String teamId, TeamUpdateRequest request, String actorId) {
+         String actor = currentActor.subjectOrSystem();
+-        Team team = teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
++        Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+         if (request.getName() != null && !request.getName().equals(team.getName())) {
+             teamRepository.findByCompanyIdAndNameAndAudit_TrashedAtIsNull(companyId, request.getName())
+@@ -78,14 +80,14 @@ public class TeamCommandService {
+         return teamMapper.toResponse(teamRepository.save(team));
+     }
+ 
+-    public TeamResponse trashTeam(String companyId, Long teamId, String actorId) {
++    public TeamResponse trashTeam(String companyId, String teamId, String actorId) {
+         String actor = currentActor.subjectOrSystem();
+-        Team team = teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
++        Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+         team.getAudit().setTrashedAt(LocalDateTime.now());
+         team.getAudit().setTrashedBy(actor);
+         team.getAudit().setModifiedBy(actor);
+-        teamMemberRepository.findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(companyId, teamId)
++        teamMemberRepository.findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(companyId, team.getId())
+                 .forEach(member -> {
+                     member.getAudit().setTrashedAt(LocalDateTime.now());
+                     member.getAudit().setTrashedBy(actor);
+@@ -97,9 +99,9 @@ public class TeamCommandService {
+         return teamMapper.toResponse(teamRepository.save(team));
+     }
+ 
+-    public TeamResponse restoreTeam(String companyId, Long teamId, String actorId) {
++    public TeamResponse restoreTeam(String companyId, String teamId, String actorId) {
+         String actor = currentActor.subjectOrSystem();
+-        Team team = teamRepository.findByIdAndCompanyId(teamId, companyId)
++        Team team = teamRepository.findByTeamIdAndCompanyId(teamId, companyId)
+                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+         team.getAudit().setTrashedAt(null);
+         team.getAudit().setTrashedBy(null);
+@@ -107,13 +109,13 @@ public class TeamCommandService {
+         return teamMapper.toResponse(teamRepository.save(team));
+     }
+ 
+-    public TeamMemberResponse addTeamMember(String companyId, Long teamId, TeamMemberAddRequest request, String actorId) {
++    public TeamMemberResponse addTeamMember(String companyId, String teamId, TeamMemberAddRequest request, String actorId) {
+         String actor = currentActor.subjectOrSystem();
+-        Team team = teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
++        Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+-        Person person = personRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(request.getPersonId(), companyId)
++        Person person = personRepository.findByCompanyIdAndPublicIdAndAudit_TrashedAtIsNull(companyId, request.getPersonId())
+                 .orElseThrow(() -> new NotFoundException("Person not found for company and id."));
+-        teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, teamId, request.getPersonId())
++        teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, team.getId(), person.getId())
+                 .ifPresent(existing -> {
+                     throw new ConflictException("Person is already an active member of this team.");
+                 });
+@@ -121,16 +123,20 @@ public class TeamCommandService {
+         teamMember.setCompanyId(companyId);
+         teamMember.setTeam(team);
+         teamMember.setPerson(person);
++        teamMember.setMembershipId(UUID.randomUUID().toString());
++        teamMember.setIsPrimary(Boolean.TRUE.equals(request.getIsPrimary()));
+         teamMember.getAudit().setCreatedBy(actor);
+         teamMember.getAudit().setModifiedBy(actor);
+         return teamMemberMapper.toResponse(teamMemberRepository.save(teamMember));
+     }
+ 
+-    public void removeTeamMember(String companyId, Long teamId, String personId, String actorId) {
++    public void removeTeamMember(String companyId, String teamId, String personId, String actorId) {
+         String actor = currentActor.subjectOrSystem();
++        Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
++                .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+         Person person = personRepository.findByCompanyIdAndPublicId(companyId, personId)
+                 .orElseThrow(() -> new NotFoundException("Person not found for company and id."));
+-        TeamMember teamMember = teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, teamId, person.getId())
++        TeamMember teamMember = teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, team.getId(), person.getId())
+                 .orElseThrow(() -> new NotFoundException("Active team member relation not found."));
+         teamMember.getAudit().setTrashedAt(LocalDateTime.now());
+         teamMember.getAudit().setTrashedBy(actor);
+diff --git a/src/main/java/de/innologic/personservice/service/team/TeamQueryService.java b/src/main/java/de/innologic/personservice/service/team/TeamQueryService.java
+index 5903c46..75795d2 100644
+--- a/src/main/java/de/innologic/personservice/service/team/TeamQueryService.java
++++ b/src/main/java/de/innologic/personservice/service/team/TeamQueryService.java
+@@ -1,5 +1,6 @@
+ package de.innologic.personservice.service.team;
+ 
++import de.innologic.personservice.domain.Team;
+ import de.innologic.personservice.dto.TeamMemberResponse;
+ import de.innologic.personservice.dto.TeamResponse;
+ import de.innologic.personservice.mapper.TeamMapper;
+@@ -39,16 +40,16 @@ public class TeamQueryService {
+         return teamRepository.search(companyId, normalize(q), includeTrashed, pageable).map(teamMapper::toResponse);
+     }
+ 
+-    public TeamResponse getTeam(String companyId, Long teamId) {
+-        return teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
++    public TeamResponse getTeam(String companyId, String teamId) {
++        return teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+                 .map(teamMapper::toResponse)
+                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+     }
+ 
+-    public List<TeamMemberResponse> getTeamMembers(String companyId, Long teamId) {
+-        teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
++    public List<TeamMemberResponse> getTeamMembers(String companyId, String teamId) {
++        Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+-        return teamMemberRepository.findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(companyId, teamId).stream()
++        return teamMemberRepository.findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(companyId, team.getId()).stream()
+                 .map(teamMemberMapper::toResponse)
+                 .toList();
+     }
+diff --git a/src/main/java/de/innologic/personservice/web/TeamCommandController.java b/src/main/java/de/innologic/personservice/web/TeamCommandController.java
+index 2327abe..31db7cd 100644
+--- a/src/main/java/de/innologic/personservice/web/TeamCommandController.java
++++ b/src/main/java/de/innologic/personservice/web/TeamCommandController.java
+@@ -7,9 +7,15 @@ import de.innologic.personservice.dto.TeamResponse;
+ import de.innologic.personservice.dto.TeamUpdateRequest;
+ import de.innologic.personservice.service.team.TeamCommandService;
+ import io.swagger.v3.oas.annotations.Operation;
++import io.swagger.v3.oas.annotations.Parameter;
++import io.swagger.v3.oas.annotations.media.Content;
++import io.swagger.v3.oas.annotations.media.Schema;
++import io.swagger.v3.oas.annotations.responses.ApiResponse;
++import io.swagger.v3.oas.annotations.responses.ApiResponses;
+ import io.swagger.v3.oas.annotations.tags.Tag;
+ import jakarta.validation.Valid;
+ import org.springframework.http.HttpStatus;
++import org.springframework.http.ProblemDetail;
+ import org.springframework.security.access.prepost.PreAuthorize;
+ import org.springframework.web.bind.annotation.DeleteMapping;
+ import org.springframework.web.bind.annotation.PatchMapping;
+@@ -34,45 +40,110 @@ public class TeamCommandController {
+ 
+     @PostMapping
+     @ResponseStatus(HttpStatus.CREATED)
+-    @Operation(summary = "Create team")
++    @Operation(summary = "Create team",
++            description = "Register a new team inside the company scope and return its stable public teamId.")
++    @ApiResponses({
++            @ApiResponse(responseCode = "201", description = "Team created.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamResponse.class))),
++            @ApiResponse(responseCode = "400", description = "Validation failed or companyId mismatch.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "403", description = "Insufficient scope.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "409", description = "Team name already exists in the tenant.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
++    })
+     @PreAuthorize("hasAuthority('SCOPE_team:write')")
+     public TeamResponse createTeam(
++            @Parameter(description = "Tenant (company) ID that also scopes the JWT.", required = true, example = "company-123")
+             @PathVariable String companyId,
++            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Team payload with name and optional description.", required = true,
++                    content = @Content(schema = @Schema(implementation = TeamCreateRequest.class)))
+             @Valid @RequestBody TeamCreateRequest request,
++            @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
+             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
+     ) {
+         return teamCommandService.createTeam(companyId, request, actorId);
+     }
+ 
+     @PatchMapping("/{teamId}")
+-    @Operation(summary = "Update team")
++    @Operation(summary = "Update team",
++            description = "Update the team's name or description while keeping the public teamId stable.")
++    @ApiResponses({
++            @ApiResponse(responseCode = "200", description = "Team updated.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamResponse.class))),
++            @ApiResponse(responseCode = "400", description = "Validation failed.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "403", description = "Insufficient scope.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "404", description = "Team not found.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "409", description = "Team name already exists in the tenant.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
++    })
+     @PreAuthorize("hasAuthority('SCOPE_team:write')")
+     public TeamResponse updateTeam(
++            @Parameter(description = "Tenant (company) ID that scopes the team.", required = true, example = "company-123")
+             @PathVariable String companyId,
+-            @PathVariable Long teamId,
++            @Parameter(description = "Public teamId of the team to update.", required = true, example = "team-123")
++            @PathVariable String teamId,
++            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Partial payload for the team.",
++                    required = true, content = @Content(schema = @Schema(implementation = TeamUpdateRequest.class)))
+             @Valid @RequestBody TeamUpdateRequest request,
++            @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
+             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
+     ) {
+         return teamCommandService.updateTeam(companyId, teamId, request, actorId);
+     }
+ 
+     @PostMapping("/{teamId}/trash")
+-    @Operation(summary = "Trash team")
++    @Operation(summary = "Trash team",
++            description = "Move a team into the trashed state while keeping the public IDs and audit data accessible.")
++    @ApiResponses({
++            @ApiResponse(responseCode = "200", description = "Team trashed.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamResponse.class))),
++            @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "403", description = "Insufficient scope.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "404", description = "Team not found.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
++    })
+     @PreAuthorize("hasAuthority('SCOPE_team:write')")
+     public TeamResponse trashTeam(
++            @Parameter(description = "Tenant (company) ID owning the team.", required = true, example = "company-123")
+             @PathVariable String companyId,
+-            @PathVariable Long teamId,
++            @Parameter(description = "Public teamId of the team to trash.", required = true, example = "team-123")
++            @PathVariable String teamId,
++            @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
+             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
+     ) {
+         return teamCommandService.trashTeam(companyId, teamId, actorId);
+     }
+ 
+     @PostMapping("/{teamId}/restore")
+-    @Operation(summary = "Restore team")
++    @Operation(summary = "Restore team",
++            description = "Re-activate a previously trashed team while keeping its public teamId stable.")
++    @ApiResponses({
++            @ApiResponse(responseCode = "200", description = "Team restored.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamResponse.class))),
++            @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "403", description = "Insufficient scope.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "404", description = "Team not found.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
++    })
+     @PreAuthorize("hasAuthority('SCOPE_team:write')")
+     public TeamResponse restoreTeam(
++            @Parameter(description = "Tenant (company) ID owning the team.", required = true, example = "company-123")
+             @PathVariable String companyId,
+-            @PathVariable Long teamId,
++            @Parameter(description = "Public teamId of the team to restore.", required = true, example = "team-123")
++            @PathVariable String teamId,
++            @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
+             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
+     ) {
+         return teamCommandService.restoreTeam(companyId, teamId, actorId);
+@@ -80,12 +151,32 @@ public class TeamCommandController {
+ 
+     @PostMapping("/{teamId}/members")
+     @ResponseStatus(HttpStatus.CREATED)
+-    @Operation(summary = "Add member to team")
++    @Operation(summary = "Add member to team",
++            description = "Add a person to a team via their public personId and optionally mark the membership as primary.")
++    @ApiResponses({
++            @ApiResponse(responseCode = "201", description = "Membership created.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamMemberResponse.class))),
++            @ApiResponse(responseCode = "400", description = "Validation failed.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "403", description = "Insufficient scope.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "404", description = "Team or person not found.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "409", description = "Person already an active member of this team.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
++    })
+     @PreAuthorize("hasAuthority('SCOPE_team:write')")
+     public TeamMemberResponse addMember(
++            @Parameter(description = "Tenant (company) ID owning the team.", required = true, example = "company-123")
+             @PathVariable String companyId,
+-            @PathVariable Long teamId,
++            @Parameter(description = "Public teamId to add the member to.", required = true, example = "team-123")
++            @PathVariable String teamId,
++            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Membership payload referencing a public personId and optional joinedAt/isPrimary.",
++                    required = true, content = @Content(schema = @Schema(implementation = TeamMemberAddRequest.class)))
+             @Valid @RequestBody TeamMemberAddRequest request,
++            @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
+             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
+     ) {
+         return teamCommandService.addTeamMember(companyId, teamId, request, actorId);
+@@ -93,12 +184,26 @@ public class TeamCommandController {
+ 
+     @DeleteMapping("/{teamId}/members/{personId}")
+     @ResponseStatus(HttpStatus.NO_CONTENT)
+-    @Operation(summary = "Remove member from team")
++    @Operation(summary = "Remove member from team",
++            description = "Soft-delete the membership and record the actor. The returned response is empty when successful.")
++    @ApiResponses({
++            @ApiResponse(responseCode = "204", description = "Membership removed."),
++            @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "403", description = "Insufficient scope.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "404", description = "Team, person, or active membership not found.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
++    })
+     @PreAuthorize("hasAuthority('SCOPE_team:write')")
+     public void removeMember(
++            @Parameter(description = "Tenant (company) ID owning the team.", required = true, example = "company-123")
+             @PathVariable String companyId,
+-            @PathVariable Long teamId,
++            @Parameter(description = "Public teamId from which to remove the member.", required = true, example = "team-123")
++            @PathVariable String teamId,
++            @Parameter(description = "Public personId identifying the member to remove.", required = true, example = "beb65d9f-8f4b-4c1f-9b0d-1c3ffc572123")
+             @PathVariable String personId,
++            @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
+             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
+     ) {
+         teamCommandService.removeTeamMember(companyId, teamId, personId, actorId);
+diff --git a/src/main/java/de/innologic/personservice/web/TeamQueryController.java b/src/main/java/de/innologic/personservice/web/TeamQueryController.java
+index 36a63f4..795d992 100644
+--- a/src/main/java/de/innologic/personservice/web/TeamQueryController.java
++++ b/src/main/java/de/innologic/personservice/web/TeamQueryController.java
+@@ -4,6 +4,11 @@ import de.innologic.personservice.dto.TeamMemberResponse;
+ import de.innologic.personservice.dto.TeamResponse;
+ import de.innologic.personservice.service.team.TeamQueryService;
+ import io.swagger.v3.oas.annotations.Operation;
++import io.swagger.v3.oas.annotations.Parameter;
++import io.swagger.v3.oas.annotations.media.Content;
++import io.swagger.v3.oas.annotations.media.Schema;
++import io.swagger.v3.oas.annotations.responses.ApiResponse;
++import io.swagger.v3.oas.annotations.responses.ApiResponses;
+ import io.swagger.v3.oas.annotations.tags.Tag;
+ import org.springframework.data.domain.Page;
+ import org.springframework.data.domain.Pageable;
+@@ -16,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
+ import org.springframework.web.bind.annotation.RestController;
+ 
+ import java.util.List;
++import org.springframework.http.ProblemDetail;
+ 
+ @RestController
+ @RequestMapping("/api/v1/companies/{companyId}/teams")
+@@ -29,9 +35,18 @@ public class TeamQueryController {
+     }
+ 
+     @GetMapping
+-    @Operation(summary = "List teams by company")
++    @Operation(summary = "List teams by company",
++            description = "Page through teams for the tenant, optionally including trashed records and filtering by free text.")
++    @ApiResponses({
++            @ApiResponse(responseCode = "200", description = "Page of teams."),
++            @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "403", description = "Insufficient scope.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
++    })
+     @PreAuthorize("hasAuthority('SCOPE_team:read')")
+     public Page<TeamResponse> listTeams(
++            @Parameter(description = "Tenant (company) ID scoping the teams.", required = true, example = "company-123")
+             @PathVariable String companyId,
+             @RequestParam(required = false) String q,
+             @RequestParam(defaultValue = "false") boolean includeTrashed,
+@@ -41,16 +56,45 @@ public class TeamQueryController {
+     }
+ 
+     @GetMapping("/{teamId}")
+-    @Operation(summary = "Get team by id")
++    @Operation(summary = "Get team by id",
++            description = "Fetch the requested team if it exists inside the current tenant.")
++    @ApiResponses({
++            @ApiResponse(responseCode = "200", description = "Team details.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamResponse.class))),
++            @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "403", description = "Insufficient scope.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "404", description = "Team not found.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
++    })
+     @PreAuthorize("hasAuthority('SCOPE_team:read')")
+-    public TeamResponse getTeam(@PathVariable String companyId, @PathVariable Long teamId) {
++    public TeamResponse getTeam(
++            @Parameter(description = "Tenant (company) ID owning the team.", required = true, example = "company-123")
++            @PathVariable String companyId,
++            @Parameter(description = "Public teamId for the team.", required = true, example = "team-123")
++            @PathVariable String teamId) {
+         return teamQueryService.getTeam(companyId, teamId);
+     }
+ 
+     @GetMapping("/{teamId}/members")
+-    @Operation(summary = "List members of a team")
++    @Operation(summary = "List members of a team",
++            description = "Return the current active memberships of a team reference.")
++    @ApiResponses({
++            @ApiResponse(responseCode = "200", description = "List of memberships."),
++            @ApiResponse(responseCode = "401", description = "Authentication missing or invalid.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "403", description = "Insufficient scope.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class))),
++            @ApiResponse(responseCode = "404", description = "Team not found.",
++                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProblemDetail.class)))
++    })
+     @PreAuthorize("hasAuthority('SCOPE_team:read')")
+-    public List<TeamMemberResponse> getTeamMembers(@PathVariable String companyId, @PathVariable Long teamId) {
++    public List<TeamMemberResponse> getTeamMembers(
++            @Parameter(description = "Tenant (company) ID owning the team.", required = true, example = "company-123")
++            @PathVariable String companyId,
++            @Parameter(description = "Public teamId whose members should be returned.", required = true, example = "team-123")
++            @PathVariable String teamId) {
+         return teamQueryService.getTeamMembers(companyId, teamId);
+     }
+ }
+diff --git a/src/test/java/de/innologic/personservice/web/TeamCommandControllerTest.java b/src/test/java/de/innologic/personservice/web/TeamCommandControllerTest.java
+index f1aa38a..a2637b6 100644
+--- a/src/test/java/de/innologic/personservice/web/TeamCommandControllerTest.java
++++ b/src/test/java/de/innologic/personservice/web/TeamCommandControllerTest.java
+@@ -47,9 +47,9 @@ class TeamCommandControllerTest {
+     @Test
+     void shouldCreateTeam_whenValidRequest() throws Exception {
+         when(teamCommandService.createTeam(eq("1"), any(TeamCreateRequest.class), eq("actor-1")))
+-                .thenReturn(sampleTeamResponse(20L, "1"));
++                .thenReturn(sampleTeamResponse("team-20", "1"));
+ 
+-        mockMvc.perform(post("/api/v1/companies/{companyId}/teams", 1L)
++        mockMvc.perform(post("/api/v1/companies/{companyId}/teams", "1")
+                         .header("X-Actor-Id", "actor-1")
+                         .contentType(MediaType.APPLICATION_JSON)
+                         .content("""
+@@ -61,8 +61,8 @@ class TeamCommandControllerTest {
+                                 """))
+                 .andExpect(status().isCreated())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+-                .andExpect(jsonPath("$.id").value(20))
+-                .andExpect(jsonPath("$.companyId").value(1))
++                .andExpect(jsonPath("$.teamId").value("team-20"))
++                .andExpect(jsonPath("$.companyId").value("1"))
+                 .andExpect(jsonPath("$.createdAt").isNotEmpty());
+     }
+ 
+@@ -89,10 +89,10 @@ class TeamCommandControllerTest {
+ 
+     @Test
+     void shouldUpdateTeam_whenValidPatch() throws Exception {
+-        when(teamCommandService.updateTeam(eq("1"), eq(20L), any(TeamUpdateRequest.class), eq("actor-1")))
+-                .thenReturn(sampleTeamResponse(20L, "1"));
++        when(teamCommandService.updateTeam(eq("1"), eq("team-20"), any(TeamUpdateRequest.class), eq("actor-1")))
++                .thenReturn(sampleTeamResponse("team-20", "1"));
+ 
+-        mockMvc.perform(patch("/api/v1/companies/{companyId}/teams/{teamId}", 1L, 20L)
++        mockMvc.perform(patch("/api/v1/companies/{companyId}/teams/{teamId}", "1", "team-20")
+                         .header("X-Actor-Id", "actor-1")
+                         .contentType(MediaType.APPLICATION_JSON)
+                         .content("""
+@@ -102,17 +102,17 @@ class TeamCommandControllerTest {
+                                 """))
+                 .andExpect(status().isOk())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+-                .andExpect(jsonPath("$.id").value(20))
+-                .andExpect(jsonPath("$.companyId").value(1))
++                .andExpect(jsonPath("$.teamId").value("team-20"))
++                .andExpect(jsonPath("$.companyId").value("1"))
+                 .andExpect(jsonPath("$.modifiedAt").isNotEmpty());
+     }
+ 
+     @Test
+     void shouldReturn404_whenUpdateTeamNotFound() throws Exception {
+-        when(teamCommandService.updateTeam(eq("1"), eq(404L), any(TeamUpdateRequest.class), eq("actor-1")))
++        when(teamCommandService.updateTeam(eq("1"), eq("team-404"), any(TeamUpdateRequest.class), eq("actor-1")))
+                 .thenThrow(new NotFoundException("Team not found"));
+ 
+-        mockMvc.perform(patch("/api/v1/companies/{companyId}/teams/{teamId}", 1L, 404L)
++        mockMvc.perform(patch("/api/v1/companies/{companyId}/teams/{teamId}", "1", "team-404")
+                         .header("X-Actor-Id", "actor-1")
+                         .contentType(MediaType.APPLICATION_JSON)
+                         .content("""
+@@ -124,101 +124,101 @@ class TeamCommandControllerTest {
+                 .andExpect(header().string("Content-Type", containsString("json")))
+                 .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
+                 .andExpect(jsonPath("$.message").value(containsString("Team not found")))
+-                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/404"));
++                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/team-404"));
+     }
+ 
+     @Test
+     void shouldTrashTeam_whenTeamExists() throws Exception {
+-        TeamResponse trashed = sampleTeamResponse(20L, "1");
++        TeamResponse trashed = sampleTeamResponse("team-20", "1");
+         trashed.setTrashedAt(LocalDateTime.now());
+         trashed.setTrashedBy("actor-1");
+-        when(teamCommandService.trashTeam("1", 20L, "actor-1")).thenReturn(trashed);
++        when(teamCommandService.trashTeam("1", "team-20", "actor-1")).thenReturn(trashed);
+ 
+-        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/trash", 1L, 20L)
++        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/trash", "1", "team-20")
+                         .header("X-Actor-Id", "actor-1"))
+                 .andExpect(status().isOk())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+-                .andExpect(jsonPath("$.id").value(20))
+-                .andExpect(jsonPath("$.companyId").value(1))
++                .andExpect(jsonPath("$.teamId").value("team-20"))
++                .andExpect(jsonPath("$.companyId").value("1"))
+                 .andExpect(jsonPath("$.trashedAt").isNotEmpty());
+     }
+ 
+     @Test
+     void shouldReturn404_whenTrashTeamNotFound() throws Exception {
+-        when(teamCommandService.trashTeam("1", 404L, "actor-1")).thenThrow(new NotFoundException("Team not found"));
++        when(teamCommandService.trashTeam("1", "team-404", "actor-1")).thenThrow(new NotFoundException("Team not found"));
+ 
+-        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/trash", 1L, 404L)
++        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/trash", "1", "team-404")
+                         .header("X-Actor-Id", "actor-1"))
+                 .andExpect(status().isNotFound())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+                 .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
+                 .andExpect(jsonPath("$.message").value(containsString("Team not found")))
+-                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/404/trash"));
++                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/team-404/trash"));
+     }
+ 
+     @Test
+     void shouldRestoreTeam_whenTeamExists() throws Exception {
+-        TeamResponse restored = sampleTeamResponse(20L, "1");
++        TeamResponse restored = sampleTeamResponse("team-20", "1");
+         restored.setTrashedAt(null);
+         restored.setTrashedBy(null);
+-        when(teamCommandService.restoreTeam("1", 20L, "actor-1")).thenReturn(restored);
++        when(teamCommandService.restoreTeam("1", "team-20", "actor-1")).thenReturn(restored);
+ 
+-        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/restore", 1L, 20L)
++        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/restore", "1", "team-20")
+                         .header("X-Actor-Id", "actor-1"))
+                 .andExpect(status().isOk())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+-                .andExpect(jsonPath("$.id").value(20))
+-                .andExpect(jsonPath("$.companyId").value(1))
++                .andExpect(jsonPath("$.teamId").value("team-20"))
++                .andExpect(jsonPath("$.companyId").value("1"))
+                 .andExpect(jsonPath("$.trashedAt").isEmpty());
+     }
+ 
+     @Test
+     void shouldReturn404_whenRestoreTeamNotFound() throws Exception {
+-        when(teamCommandService.restoreTeam("1", 404L, "actor-1")).thenThrow(new NotFoundException("Team not found"));
++        when(teamCommandService.restoreTeam("1", "team-404", "actor-1")).thenThrow(new NotFoundException("Team not found"));
+ 
+-        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/restore", 1L, 404L)
++        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/restore", "1", "team-404")
+                         .header("X-Actor-Id", "actor-1"))
+                 .andExpect(status().isNotFound())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+                 .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
+                 .andExpect(jsonPath("$.message").value(containsString("Team not found")))
+-                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/404/restore"));
++                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/team-404/restore"));
+     }
+ 
+     @Test
+     void shouldAddMember_whenValidRequest() throws Exception {
+-        TeamMemberResponse response = sampleMemberResponse(50L, "1", 20L, 10L);
+-        when(teamCommandService.addTeamMember(eq("1"), eq(20L), any(TeamMemberAddRequest.class), eq("actor-1")))
++        TeamMemberResponse response = sampleMemberResponse("membership-50", "1", "team-20", "person-10");
++        when(teamCommandService.addTeamMember(eq("1"), eq("team-20"), any(TeamMemberAddRequest.class), eq("actor-1")))
+                 .thenReturn(response);
+ 
+-        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/members", 1L, 20L)
++        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/members", "1", "team-20")
+                         .header("X-Actor-Id", "actor-1")
+                         .contentType(MediaType.APPLICATION_JSON)
+                         .content("""
+                                 {
+-                                  "personId": 10,
++                                  "personId": "person-10",
+                                   "role": "Developer"
+                                 }
+                                 """))
+                 .andExpect(status().isCreated())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+-                .andExpect(jsonPath("$.id").value(50))
+-                .andExpect(jsonPath("$.companyId").value(1))
+-                .andExpect(jsonPath("$.teamId").value(20))
+-                .andExpect(jsonPath("$.personId").value(10));
++                .andExpect(jsonPath("$.membershipId").value("membership-50"))
++                .andExpect(jsonPath("$.companyId").value("1"))
++                .andExpect(jsonPath("$.teamId").value("team-20"))
++                .andExpect(jsonPath("$.personId").value("person-10"));
+     }
+ 
+     @Test
+     void shouldReturn409_whenAddMemberDuplicate() throws Exception {
+-        when(teamCommandService.addTeamMember(eq("1"), eq(20L), any(TeamMemberAddRequest.class), eq("actor-1")))
++        when(teamCommandService.addTeamMember(eq("1"), eq("team-20"), any(TeamMemberAddRequest.class), eq("actor-1")))
+                 .thenThrow(new ConflictException("Person is already an active member"));
+ 
+-        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/members", 1L, 20L)
++        mockMvc.perform(post("/api/v1/companies/{companyId}/teams/{teamId}/members", "1", "team-20")
+                         .header("X-Actor-Id", "actor-1")
+                         .contentType(MediaType.APPLICATION_JSON)
+                         .content("""
+                                 {
+-                                  "personId": 10,
++                                  "personId": "person-10",
+                                   "role": "Developer"
+                                 }
+                                 """))
+@@ -226,12 +226,12 @@ class TeamCommandControllerTest {
+                 .andExpect(header().string("Content-Type", containsString("json")))
+                 .andExpect(jsonPath("$.errorCode").value("CONFLICT"))
+                 .andExpect(jsonPath("$.message").value(containsString("already an active member")))
+-                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/20/members"));
++                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/team-20/members"));
+     }
+ 
+     @Test
+     void shouldRemoveMember_whenExistingMembership() throws Exception {
+-        mockMvc.perform(delete("/api/v1/companies/{companyId}/teams/{teamId}/members/{personId}", 1L, 20L, 10L)
++        mockMvc.perform(delete("/api/v1/companies/{companyId}/teams/{teamId}/members/{personId}", "1", "team-20", "person-10")
+                         .header("X-Actor-Id", "actor-1"))
+                 .andExpect(status().isNoContent());
+     }
+@@ -239,21 +239,21 @@ class TeamCommandControllerTest {
+     @Test
+     void shouldReturn404_whenRemoveMemberNotFound() throws Exception {
+         doThrow(new NotFoundException("Active team member relation not found"))
+-                .when(teamCommandService).removeTeamMember("1", 20L, "404", "actor-1");
++                .when(teamCommandService).removeTeamMember("1", "team-20", "person-404", "actor-1");
+ 
+-        mockMvc.perform(delete("/api/v1/companies/{companyId}/teams/{teamId}/members/{personId}", 1L, 20L, 404L)
++        mockMvc.perform(delete("/api/v1/companies/{companyId}/teams/{teamId}/members/{personId}", "1", "team-20", "person-404")
+                         .header("X-Actor-Id", "actor-1"))
+                 .andExpect(status().isNotFound())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+                 .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
+                 .andExpect(jsonPath("$.message").value(containsString("Active team member relation not found")))
+-                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/20/members/404"));
++                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/team-20/members/person-404"));
+     }
+ 
+-    private TeamResponse sampleTeamResponse(Long id, String companyId) {
++    private TeamResponse sampleTeamResponse(String teamId, String companyId) {
+         TeamResponse response = new TeamResponse();
+-        response.setId(id);
+         response.setCompanyId(companyId);
++        response.setTeamId(teamId);
+         response.setName("Core Team");
+         response.setCreatedAt(LocalDateTime.now().minusDays(1));
+         response.setModifiedAt(LocalDateTime.now());
+@@ -262,12 +262,13 @@ class TeamCommandControllerTest {
+         return response;
+     }
+ 
+-    private TeamMemberResponse sampleMemberResponse(Long id, String companyId, Long teamId, Long personId) {
++    private TeamMemberResponse sampleMemberResponse(String membershipId, String companyId, String teamId, String personId) {
+         TeamMemberResponse response = new TeamMemberResponse();
+-        response.setId(id);
+         response.setCompanyId(companyId);
+         response.setTeamId(teamId);
+         response.setPersonId(personId);
++        response.setMembershipId(membershipId);
++        response.setIsPrimary(Boolean.TRUE);
+         response.setRole("Developer");
+         response.setCreatedAt(LocalDateTime.now().minusDays(1));
+         response.setModifiedAt(LocalDateTime.now());
+diff --git a/src/test/java/de/innologic/personservice/web/TeamEndpointsSecurityTest.java b/src/test/java/de/innologic/personservice/web/TeamEndpointsSecurityTest.java
+index 35960f9..f99c7ca 100644
+--- a/src/test/java/de/innologic/personservice/web/TeamEndpointsSecurityTest.java
++++ b/src/test/java/de/innologic/personservice/web/TeamEndpointsSecurityTest.java
+@@ -49,8 +49,9 @@ class TeamEndpointsSecurityTest {
+ 
+     private static final String COMPANY_ID = "100";
+     private static final String OTHER_COMPANY_ID = "200";
+-    private static final long TEAM_ID = 20L;
+-    private static final long PERSON_ID = 10L;
++    private static final String TEAM_ID = "team-20";
++    private static final String PERSON_ID = "person-10";
++    private static final String MEMBERSHIP_ID = "membership-99";
+ 
+     @Autowired
+     private MockMvc mockMvc;
+@@ -356,9 +357,10 @@ class TeamEndpointsSecurityTest {
+ 
+     @Test
+     void getTeam_shouldReturn404_whenTeamNotFound() throws Exception {
+-        when(teamQueryService.getTeam(COMPANY_ID, 999L)).thenThrow(new NotFoundException("Team not found"));
++        String missingTeamId = "team-999";
++        when(teamQueryService.getTeam(COMPANY_ID, missingTeamId)).thenThrow(new NotFoundException("Team not found"));
+ 
+-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", COMPANY_ID, 999L)
++        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", COMPANY_ID, missingTeamId)
+                         .with(jwtWithTenantAndScope(COMPANY_ID, "team:read")))
+                 .andExpect(status().isNotFound());
+     }
+@@ -425,28 +427,29 @@ class TeamEndpointsSecurityTest {
+     private String validAddMemberBody() {
+         return """
+                 {
+-                  "personId": 10,
++                  "personId": "%s",
+                   "role": "Developer"
+                 }
+-                """;
++                """.formatted(PERSON_ID);
+     }
+ 
+-    private TeamResponse sampleTeamResponse(Long id, String companyId) {
++    private TeamResponse sampleTeamResponse(String teamId, String companyId) {
+         TeamResponse response = new TeamResponse();
+-        response.setId(id);
+         response.setCompanyId(companyId);
++        response.setTeamId(teamId);
+         response.setName("Core Team");
+         response.setCreatedAt(LocalDateTime.now().minusDays(1));
+         response.setModifiedAt(LocalDateTime.now());
+         return response;
+     }
+ 
+-    private TeamMemberResponse sampleMemberResponse(String companyId, Long teamId, Long personId) {
++    private TeamMemberResponse sampleMemberResponse(String companyId, String teamId, String personId) {
+         TeamMemberResponse response = new TeamMemberResponse();
+-        response.setId(99L);
+         response.setCompanyId(companyId);
+         response.setTeamId(teamId);
+         response.setPersonId(personId);
++        response.setMembershipId(MEMBERSHIP_ID);
++        response.setIsPrimary(Boolean.TRUE);
+         response.setRole("Developer");
+         response.setCreatedAt(LocalDateTime.now().minusDays(1));
+         response.setModifiedAt(LocalDateTime.now());
+diff --git a/src/test/java/de/innologic/personservice/web/TeamQueryControllerTest.java b/src/test/java/de/innologic/personservice/web/TeamQueryControllerTest.java
+index 1f5238c..97a59fd 100644
+--- a/src/test/java/de/innologic/personservice/web/TeamQueryControllerTest.java
++++ b/src/test/java/de/innologic/personservice/web/TeamQueryControllerTest.java
+@@ -42,13 +42,13 @@ class TeamQueryControllerTest {
+     @Test
+     void shouldListTeams_whenValidRequest() throws Exception {
+         when(teamQueryService.listTeams(eq("1"), isNull(), eq(false), eq(PageRequest.of(0, 20))))
+-                .thenReturn(new PageImpl<>(List.of(sampleTeamResponse(20L, "1")), PageRequest.of(0, 20), 1));
++                .thenReturn(new PageImpl<>(List.of(sampleTeamResponse("team-20", "1")), PageRequest.of(0, 20), 1));
+ 
+-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams", 1L))
++        mockMvc.perform(get("/api/v1/companies/{companyId}/teams", "1"))
+                 .andExpect(status().isOk())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+-                .andExpect(jsonPath("$.content[0].id").value(20))
+-                .andExpect(jsonPath("$.content[0].companyId").value(1))
++                .andExpect(jsonPath("$.content[0].teamId").value("team-20"))
++                .andExpect(jsonPath("$.content[0].companyId").value("1"))
+                 .andExpect(jsonPath("$.content[0].createdAt").isNotEmpty());
+     }
+ 
+@@ -65,64 +65,65 @@ class TeamQueryControllerTest {
+ 
+     @Test
+     void shouldGetTeam_whenExists() throws Exception {
+-        when(teamQueryService.getTeam("1", 20L)).thenReturn(sampleTeamResponse(20L, "1"));
++        when(teamQueryService.getTeam("1", "team-20")).thenReturn(sampleTeamResponse("team-20", "1"));
+ 
+-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", 1L, 20L))
++        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", "1", "team-20"))
+                 .andExpect(status().isOk())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+-                .andExpect(jsonPath("$.id").value(20))
+-                .andExpect(jsonPath("$.companyId").value(1))
++                .andExpect(jsonPath("$.teamId").value("team-20"))
++                .andExpect(jsonPath("$.companyId").value("1"))
+                 .andExpect(jsonPath("$.modifiedAt").isNotEmpty());
+     }
+ 
+     @Test
+     void shouldReturn404_whenTeamNotFound() throws Exception {
+-        when(teamQueryService.getTeam("1", 404L)).thenThrow(new NotFoundException("Team not found"));
++        when(teamQueryService.getTeam("1", "team-404")).thenThrow(new NotFoundException("Team not found"));
+ 
+-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", 1L, 404L))
++        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", "1", "team-404"))
+                 .andExpect(status().isNotFound())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+                 .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
+                 .andExpect(jsonPath("$.message").value(containsString("Team not found")))
+-                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/404"));
++                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/team-404"));
+     }
+ 
+     @Test
+     void shouldGetTeamMembers_whenTeamExists() throws Exception {
+         TeamMemberResponse member = new TeamMemberResponse();
+-        member.setId(99L);
++        member.setMembershipId("membership-99");
+         member.setCompanyId("1");
+-        member.setTeamId(20L);
+-        member.setPersonId(10L);
++        member.setTeamId("team-20");
++        member.setPersonId("person-10");
+         member.setCreatedAt(LocalDateTime.now().minusDays(1));
+         member.setModifiedAt(LocalDateTime.now());
+-        when(teamQueryService.getTeamMembers("1", 20L)).thenReturn(List.of(member));
++        member.setIsPrimary(Boolean.TRUE);
++        when(teamQueryService.getTeamMembers("1", "team-20")).thenReturn(List.of(member));
+ 
+-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}/members", 1L, 20L))
++        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}/members", "1", "team-20"))
+                 .andExpect(status().isOk())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+-                .andExpect(jsonPath("$[0].id").value(99))
+-                .andExpect(jsonPath("$[0].companyId").value(1))
+-                .andExpect(jsonPath("$[0].teamId").value(20))
+-                .andExpect(jsonPath("$[0].personId").value(10));
++                .andExpect(jsonPath("$[0].membershipId").value("membership-99"))
++                .andExpect(jsonPath("$[0].companyId").value("1"))
++                .andExpect(jsonPath("$[0].teamId").value("team-20"))
++                .andExpect(jsonPath("$[0].personId").value("person-10"));
+     }
+ 
+     @Test
+     void shouldReturn404_whenGetTeamMembersTeamNotFound() throws Exception {
+-        when(teamQueryService.getTeamMembers("1", 404L)).thenThrow(new NotFoundException("Team not found"));
++        when(teamQueryService.getTeamMembers("1", "team-404")).thenThrow(new NotFoundException("Team not found"));
+ 
+-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}/members", 1L, 404L))
++        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}/members", "1", "team-404"))
+                 .andExpect(status().isNotFound())
+                 .andExpect(header().string("Content-Type", containsString("json")))
+                 .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
+                 .andExpect(jsonPath("$.message").value(containsString("Team not found")))
+-                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/404/members"));
++                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/team-404/members"));
+     }
+ 
+-    private TeamResponse sampleTeamResponse(Long id, String companyId) {
++    private TeamResponse sampleTeamResponse(String teamId, String companyId) {
+         TeamResponse response = new TeamResponse();
+-        response.setId(id);
+         response.setCompanyId(companyId);
++        response.setTeamId(teamId);
+         response.setName("Core Team");
+         response.setCreatedAt(LocalDateTime.now().minusDays(1));
+         response.setModifiedAt(LocalDateTime.now());
