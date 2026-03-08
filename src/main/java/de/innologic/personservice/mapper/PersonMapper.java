@@ -1,6 +1,7 @@
 package de.innologic.personservice.mapper;
 
 import de.innologic.personservice.domain.Person;
+import de.innologic.personservice.dto.ContactOwnerType;
 import de.innologic.personservice.dto.PersonCreateRequest;
 import de.innologic.personservice.dto.PersonResponse;
 import de.innologic.personservice.dto.PersonUpdateRequest;
@@ -31,5 +32,7 @@ public interface PersonMapper {
     @Mapping(target = "trashedAt", source = "audit.trashedAt")
     @Mapping(target = "trashedBy", source = "audit.trashedBy")
     @Mapping(target = "personId", source = "publicId")
+    @Mapping(target = "contactOwnerType", expression = "java(de.innologic.personservice.dto.ContactOwnerType.PERSON)")
+    @Mapping(target = "contactOwnerId", source = "publicId")
     PersonResponse toResponse(Person person);
 }

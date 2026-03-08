@@ -1,27 +1,41 @@
 package de.innologic.personservice.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.LocalDateTime;
 
+@Schema(name = "TeamResponse", description = "Tenant-aware team metadata returned by the person-service.")
 public class TeamResponse {
 
-    private Long id;
+    @Schema(description = "Public team ID used in REST paths and downstream integrations.", example = "team-123", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String teamId;
+
+    @Schema(description = "Tenant (company) identifier owning the team.", example = "company-123", requiredMode = Schema.RequiredMode.REQUIRED)
     private String companyId;
+
+    @Schema(description = "Human-friendly team name.", example = "Platform Engineering", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
+
+    @Schema(description = "Optional description of the team's responsibilities.", example = "Builds shared platform capabilities.")
     private String description;
+
+    @Schema(description = "Record creation timestamp (UTC).", example = "2026-01-01T10:00:00Z")
     private LocalDateTime createdAt;
+
+    @Schema(description = "Actor that created the team.")
     private String createdBy;
+
+    @Schema(description = "Last modification timestamp (UTC).", example = "2026-01-01T11:00:00Z")
     private LocalDateTime modifiedAt;
+
+    @Schema(description = "Actor that last modified the team.")
     private String modifiedBy;
+
+    @Schema(description = "Timestamp when the team was trashed (or absent if active).", example = "2026-01-02T12:00:00Z")
     private LocalDateTime trashedAt;
+
+    @Schema(description = "Actor that trashed the team.")
     private String trashedBy;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public String getCompanyId() {
         return companyId;
@@ -93,6 +107,14 @@ public class TeamResponse {
 
     public void setTrashedBy(String trashedBy) {
         this.trashedBy = trashedBy;
+    }
+
+    public String getTeamId() {
+        return teamId;
+    }
+
+    public void setTeamId(String teamId) {
+        this.teamId = teamId;
     }
 }
 

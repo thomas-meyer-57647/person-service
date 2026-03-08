@@ -2,7 +2,10 @@ package de.innologic.personservice.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name = "person")
@@ -11,23 +14,25 @@ public class Person extends BaseEntity {
     @Column(name = "public_id", length = 36, unique = true, nullable = false)
     private String publicId;
 
-    @Column(name = "given_name", length = 120)
-    private String givenName;
+    @Column(name = "first_name", length = 120)
+    private String firstName;
 
-    @Column(name = "family_name", length = 120)
-    private String familyName;
+    @Column(name = "last_name", length = 120)
+    private String lastName;
 
     @Column(name = "display_name", length = 240)
     private String displayName;
 
-    @Column(name = "email", length = 320)
-    private String email;
-
-    @Column(name = "phone", length = 64)
-    private String phone;
-
     @Column(name = "notes")
     private String notes;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 32)
+    private PersonStatus status = PersonStatus.ACTIVE;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     public String getPublicId() {
         return publicId;
@@ -37,20 +42,20 @@ public class Person extends BaseEntity {
         this.publicId = publicId;
     }
 
-    public String getGivenName() {
-        return givenName;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setGivenName(String givenName) {
-        this.givenName = givenName;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getFamilyName() {
-        return familyName;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setFamilyName(String familyName) {
-        this.familyName = familyName;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public String getDisplayName() {
@@ -61,27 +66,27 @@ public class Person extends BaseEntity {
         this.displayName = displayName;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
     public String getNotes() {
         return notes;
     }
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public PersonStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(PersonStatus status) {
+        this.status = status;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }

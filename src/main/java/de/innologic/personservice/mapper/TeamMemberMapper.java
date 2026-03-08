@@ -18,6 +18,8 @@ public interface TeamMemberMapper {
     @Mapping(target = "teamRole", source = "role")
     @Mapping(target = "leftAt", ignore = true)
     @Mapping(target = "audit", ignore = true)
+    @Mapping(target = "joinedAt", source = "joinedAt")
+    @Mapping(target = "isPrimary", source = "isPrimary")
     TeamMember toEntity(TeamMemberAddRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -27,10 +29,14 @@ public interface TeamMemberMapper {
     @Mapping(target = "teamRole", source = "role")
     @Mapping(target = "leftAt", ignore = true)
     @Mapping(target = "audit", ignore = true)
+    @Mapping(target = "joinedAt", source = "joinedAt")
+    @Mapping(target = "isPrimary", source = "isPrimary")
     void updateFromAddRequest(TeamMemberAddRequest request, @MappingTarget TeamMember teamMember);
 
-    @Mapping(target = "teamId", source = "team.id")
-    @Mapping(target = "personId", source = "person.id")
+    @Mapping(target = "membershipId", source = "membershipId")
+    @Mapping(target = "teamId", source = "team.teamId")
+    @Mapping(target = "personId", source = "person.publicId")
+    @Mapping(target = "isPrimary", source = "isPrimary")
     @Mapping(target = "role", source = "teamRole")
     @Mapping(target = "createdAt", source = "audit.createdAt")
     @Mapping(target = "createdBy", source = "audit.createdBy")

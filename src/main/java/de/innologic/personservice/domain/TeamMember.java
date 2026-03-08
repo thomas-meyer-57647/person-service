@@ -19,6 +19,9 @@ import java.time.LocalDateTime;
 )
 public class TeamMember extends BaseEntity {
 
+    @Column(name = "membership_id", length = 36, nullable = false, unique = true)
+    private String membershipId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
@@ -35,6 +38,9 @@ public class TeamMember extends BaseEntity {
 
     @Column(name = "left_at")
     private LocalDateTime leftAt;
+
+    @Column(name = "is_primary", nullable = false)
+    private Boolean isPrimary = Boolean.FALSE;
 
     public Team getTeam() {
         return team;
@@ -74,5 +80,21 @@ public class TeamMember extends BaseEntity {
 
     public void setLeftAt(LocalDateTime leftAt) {
         this.leftAt = leftAt;
+    }
+
+    public Boolean getIsPrimary() {
+        return isPrimary;
+    }
+
+    public void setIsPrimary(Boolean isPrimary) {
+        this.isPrimary = isPrimary;
+    }
+
+    public String getMembershipId() {
+        return membershipId;
+    }
+
+    public void setMembershipId(String membershipId) {
+        this.membershipId = membershipId;
     }
 }

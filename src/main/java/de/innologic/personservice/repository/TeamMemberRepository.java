@@ -29,5 +29,10 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
     Optional<TeamMember> findByTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(Long teamId, Long personId);
 
     Optional<TeamMember> findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(String companyId, Long teamId, Long personId);
+
+    Optional<TeamMember> findByCompanyIdAndPerson_IdAndIsPrimaryTrueAndLeftAtIsNullAndAudit_TrashedAtIsNull(
+            String companyId,
+            Long personId
+    );
 }
 

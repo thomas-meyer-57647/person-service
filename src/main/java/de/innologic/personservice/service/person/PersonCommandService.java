@@ -1,6 +1,7 @@
 package de.innologic.personservice.service.person;
 
 import de.innologic.personservice.domain.Person;
+import de.innologic.personservice.domain.PersonStatus;
 import de.innologic.personservice.dto.PersonCreateRequest;
 import de.innologic.personservice.dto.PersonResponse;
 import de.innologic.personservice.dto.PersonUpdateRequest;
@@ -34,6 +35,7 @@ public class PersonCommandService {
         String actor = currentActor.subjectOrSystem();
         Person person = personMapper.toEntity(request);
         person.setCompanyId(companyId);
+        person.setStatus(PersonStatus.ACTIVE);
         if (person.getPublicId() == null || person.getPublicId().isBlank()) {
             person.setPublicId(UUID.randomUUID().toString());
         }
@@ -53,6 +55,7 @@ public class PersonCommandService {
     public PersonResponse trashPerson(String companyId, String personId, String actorId) {
         String actor = currentActor.subjectOrSystem();
         Person person = findActiveByPublicId(companyId, personId);
+        person.setStatus(PersonStatus.TRASHED);
         person.getAudit().setTrashedAt(LocalDateTime.now());
         person.getAudit().setTrashedBy(actor);
         person.getAudit().setModifiedBy(actor);
@@ -63,6 +66,7 @@ public class PersonCommandService {
         String actor = currentActor.subjectOrSystem();
         Person person = personRepository.findByCompanyIdAndPublicId(companyId, personId)
                 .orElseThrow(() -> new NotFoundException("Person not found for company and id."));
+        person.setStatus(PersonStatus.ACTIVE);
         person.getAudit().setTrashedAt(null);
         person.getAudit().setTrashedBy(null);
         person.getAudit().setModifiedBy(actor);

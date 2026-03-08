@@ -42,13 +42,13 @@ class TeamQueryControllerTest {
     @Test
     void shouldListTeams_whenValidRequest() throws Exception {
         when(teamQueryService.listTeams(eq("1"), isNull(), eq(false), eq(PageRequest.of(0, 20))))
-                .thenReturn(new PageImpl<>(List.of(sampleTeamResponse(20L, "1")), PageRequest.of(0, 20), 1));
+                .thenReturn(new PageImpl<>(List.of(sampleTeamResponse("team-20", "1")), PageRequest.of(0, 20), 1));
 
-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams", 1L))
+        mockMvc.perform(get("/api/v1/companies/{companyId}/teams", "1"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", containsString("json")))
-                .andExpect(jsonPath("$.content[0].id").value(20))
-                .andExpect(jsonPath("$.content[0].companyId").value(1))
+                .andExpect(jsonPath("$.content[0].teamId").value("team-20"))
+                .andExpect(jsonPath("$.content[0].companyId").value("1"))
                 .andExpect(jsonPath("$.content[0].createdAt").isNotEmpty());
     }
 
@@ -65,64 +65,65 @@ class TeamQueryControllerTest {
 
     @Test
     void shouldGetTeam_whenExists() throws Exception {
-        when(teamQueryService.getTeam("1", 20L)).thenReturn(sampleTeamResponse(20L, "1"));
+        when(teamQueryService.getTeam("1", "team-20")).thenReturn(sampleTeamResponse("team-20", "1"));
 
-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", 1L, 20L))
+        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", "1", "team-20"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", containsString("json")))
-                .andExpect(jsonPath("$.id").value(20))
-                .andExpect(jsonPath("$.companyId").value(1))
+                .andExpect(jsonPath("$.teamId").value("team-20"))
+                .andExpect(jsonPath("$.companyId").value("1"))
                 .andExpect(jsonPath("$.modifiedAt").isNotEmpty());
     }
 
     @Test
     void shouldReturn404_whenTeamNotFound() throws Exception {
-        when(teamQueryService.getTeam("1", 404L)).thenThrow(new NotFoundException("Team not found"));
+        when(teamQueryService.getTeam("1", "team-404")).thenThrow(new NotFoundException("Team not found"));
 
-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", 1L, 404L))
+        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", "1", "team-404"))
                 .andExpect(status().isNotFound())
                 .andExpect(header().string("Content-Type", containsString("json")))
                 .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
                 .andExpect(jsonPath("$.message").value(containsString("Team not found")))
-                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/404"));
+                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/team-404"));
     }
 
     @Test
     void shouldGetTeamMembers_whenTeamExists() throws Exception {
         TeamMemberResponse member = new TeamMemberResponse();
-        member.setId(99L);
+        member.setMembershipId("membership-99");
         member.setCompanyId("1");
-        member.setTeamId(20L);
-        member.setPersonId(10L);
+        member.setTeamId("team-20");
+        member.setPersonId("person-10");
         member.setCreatedAt(LocalDateTime.now().minusDays(1));
         member.setModifiedAt(LocalDateTime.now());
-        when(teamQueryService.getTeamMembers("1", 20L)).thenReturn(List.of(member));
+        member.setIsPrimary(Boolean.TRUE);
+        when(teamQueryService.getTeamMembers("1", "team-20")).thenReturn(List.of(member));
 
-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}/members", 1L, 20L))
+        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}/members", "1", "team-20"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", containsString("json")))
-                .andExpect(jsonPath("$[0].id").value(99))
-                .andExpect(jsonPath("$[0].companyId").value(1))
-                .andExpect(jsonPath("$[0].teamId").value(20))
-                .andExpect(jsonPath("$[0].personId").value(10));
+                .andExpect(jsonPath("$[0].membershipId").value("membership-99"))
+                .andExpect(jsonPath("$[0].companyId").value("1"))
+                .andExpect(jsonPath("$[0].teamId").value("team-20"))
+                .andExpect(jsonPath("$[0].personId").value("person-10"));
     }
 
     @Test
     void shouldReturn404_whenGetTeamMembersTeamNotFound() throws Exception {
-        when(teamQueryService.getTeamMembers("1", 404L)).thenThrow(new NotFoundException("Team not found"));
+        when(teamQueryService.getTeamMembers("1", "team-404")).thenThrow(new NotFoundException("Team not found"));
 
-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}/members", 1L, 404L))
+        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}/members", "1", "team-404"))
                 .andExpect(status().isNotFound())
                 .andExpect(header().string("Content-Type", containsString("json")))
                 .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
                 .andExpect(jsonPath("$.message").value(containsString("Team not found")))
-                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/404/members"));
+                .andExpect(jsonPath("$.path").value("/api/v1/companies/1/teams/team-404/members"));
     }
 
-    private TeamResponse sampleTeamResponse(Long id, String companyId) {
+    private TeamResponse sampleTeamResponse(String teamId, String companyId) {
         TeamResponse response = new TeamResponse();
-        response.setId(id);
         response.setCompanyId(companyId);
+        response.setTeamId(teamId);
         response.setName("Core Team");
         response.setCreatedAt(LocalDateTime.now().minusDays(1));
         response.setModifiedAt(LocalDateTime.now());

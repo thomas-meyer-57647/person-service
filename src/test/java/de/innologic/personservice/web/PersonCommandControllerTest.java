@@ -1,6 +1,8 @@
 package de.innologic.personservice.web;
 
 import de.innologic.personservice.config.TestSecurityConfig;
+import de.innologic.personservice.domain.PersonStatus;
+import de.innologic.personservice.dto.ContactOwnerType;
 import de.innologic.personservice.dto.PersonCreateRequest;
 import de.innologic.personservice.dto.PersonResponse;
 import de.innologic.personservice.dto.PersonUpdateRequest;
@@ -50,14 +52,17 @@ class PersonCommandControllerTest {
                         .content("""
                                 {
                                   "companyId": "1",
-                                  "givenName": "Max",
-                                  "displayName": "Max Mustermann"
+                                  "firstName": "Max",
+                                  "lastName": "Mustermann"
                                 }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Content-Type", containsString("json")))
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.companyId").value(1))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.contactOwnerType").value("PERSON"))
+                .andExpect(jsonPath("$.contactOwnerId").isNotEmpty())
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())
                 .andExpect(jsonPath("$.modifiedAt").isNotEmpty());
     }
@@ -69,7 +74,7 @@ class PersonCommandControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "givenName": "Max"
+                                  "firstName": "Max"
                                 }
                                 """))
                 .andExpect(status().isBadRequest())
@@ -124,6 +129,7 @@ class PersonCommandControllerTest {
         PersonResponse response = samplePersonResponse(10L, "1");
         response.setTrashedAt(LocalDateTime.now());
         response.setTrashedBy("actor-1");
+        response.setStatus(PersonStatus.TRASHED);
         when(personCommandService.trashPerson("1", "10", "actor-1")).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/companies/{companyId}/persons/{personId}/trash", 1L, 10L)
@@ -132,6 +138,7 @@ class PersonCommandControllerTest {
                 .andExpect(header().string("Content-Type", containsString("json")))
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.companyId").value(1))
+                .andExpect(jsonPath("$.status").value("TRASHED"))
                 .andExpect(jsonPath("$.trashedAt").isNotEmpty());
     }
 
@@ -161,6 +168,7 @@ class PersonCommandControllerTest {
                 .andExpect(header().string("Content-Type", containsString("json")))
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.companyId").value(1))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.trashedAt").isEmpty());
     }
 
@@ -180,8 +188,15 @@ class PersonCommandControllerTest {
     private PersonResponse samplePersonResponse(Long id, String companyId) {
         PersonResponse response = new PersonResponse();
         response.setId(id);
+        response.setPersonId("person-" + id);
         response.setCompanyId(companyId);
+        response.setFirstName("Max");
+        response.setLastName("Mustermann");
         response.setDisplayName("Max Mustermann");
+        response.setStatus(PersonStatus.ACTIVE);
+        response.setNotes("notes " + id);
+        response.setContactOwnerType(ContactOwnerType.PERSON);
+        response.setContactOwnerId("person-" + id);
         response.setCreatedAt(LocalDateTime.now().minusDays(1));
         response.setModifiedAt(LocalDateTime.now());
         response.setCreatedBy("actor-1");

@@ -26,6 +26,10 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 
     Optional<Team> findByIdAndCompanyId(Long id, String companyId);
 
+    Optional<Team> findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(String teamId, String companyId);
+
+    Optional<Team> findByTeamIdAndCompanyId(String teamId, String companyId);
+
     Optional<Team> findByCompanyIdAndNameAndAudit_TrashedAtIsNull(String companyId, String name);
 
     @Query("""

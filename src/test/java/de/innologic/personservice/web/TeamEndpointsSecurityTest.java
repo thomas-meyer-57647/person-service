@@ -49,8 +49,9 @@ class TeamEndpointsSecurityTest {
 
     private static final String COMPANY_ID = "100";
     private static final String OTHER_COMPANY_ID = "200";
-    private static final long TEAM_ID = 20L;
-    private static final long PERSON_ID = 10L;
+    private static final String TEAM_ID = "team-20";
+    private static final String PERSON_ID = "person-10";
+    private static final String MEMBERSHIP_ID = "membership-99";
 
     @Autowired
     private MockMvc mockMvc;
@@ -356,9 +357,10 @@ class TeamEndpointsSecurityTest {
 
     @Test
     void getTeam_shouldReturn404_whenTeamNotFound() throws Exception {
-        when(teamQueryService.getTeam(COMPANY_ID, 999L)).thenThrow(new NotFoundException("Team not found"));
+        String missingTeamId = "team-999";
+        when(teamQueryService.getTeam(COMPANY_ID, missingTeamId)).thenThrow(new NotFoundException("Team not found"));
 
-        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", COMPANY_ID, 999L)
+        mockMvc.perform(get("/api/v1/companies/{companyId}/teams/{teamId}", COMPANY_ID, missingTeamId)
                         .with(jwtWithTenantAndScope(COMPANY_ID, "team:read")))
                 .andExpect(status().isNotFound());
     }
@@ -425,28 +427,29 @@ class TeamEndpointsSecurityTest {
     private String validAddMemberBody() {
         return """
                 {
-                  "personId": 10,
+                  "personId": "%s",
                   "role": "Developer"
                 }
-                """;
+                """.formatted(PERSON_ID);
     }
 
-    private TeamResponse sampleTeamResponse(Long id, String companyId) {
+    private TeamResponse sampleTeamResponse(String teamId, String companyId) {
         TeamResponse response = new TeamResponse();
-        response.setId(id);
         response.setCompanyId(companyId);
+        response.setTeamId(teamId);
         response.setName("Core Team");
         response.setCreatedAt(LocalDateTime.now().minusDays(1));
         response.setModifiedAt(LocalDateTime.now());
         return response;
     }
 
-    private TeamMemberResponse sampleMemberResponse(String companyId, Long teamId, Long personId) {
+    private TeamMemberResponse sampleMemberResponse(String companyId, String teamId, String personId) {
         TeamMemberResponse response = new TeamMemberResponse();
-        response.setId(99L);
         response.setCompanyId(companyId);
         response.setTeamId(teamId);
         response.setPersonId(personId);
+        response.setMembershipId(MEMBERSHIP_ID);
+        response.setIsPrimary(Boolean.TRUE);
         response.setRole("Developer");
         response.setCreatedAt(LocalDateTime.now().minusDays(1));
         response.setModifiedAt(LocalDateTime.now());

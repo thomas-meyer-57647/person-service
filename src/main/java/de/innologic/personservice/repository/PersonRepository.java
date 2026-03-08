@@ -34,12 +34,12 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
             select p from Person p
             where p.companyId = :companyId
               and (:includeTrashed = true or p.audit.trashedAt is null)
-              and (
+            and (
                     :q is null
                     or lower(coalesce(p.displayName, '')) like lower(concat('%', :q, '%'))
-                    or lower(coalesce(p.givenName, '')) like lower(concat('%', :q, '%'))
-                    or lower(coalesce(p.familyName, '')) like lower(concat('%', :q, '%'))
-                    or lower(coalesce(p.email, '')) like lower(concat('%', :q, '%'))
+                    or lower(coalesce(p.firstName, '')) like lower(concat('%', :q, '%'))
+                    or lower(coalesce(p.lastName, '')) like lower(concat('%', :q, '%'))
+                    or lower(coalesce(p.notes, '')) like lower(concat('%', :q, '%'))
                   )
             """)
     Page<Person> search(

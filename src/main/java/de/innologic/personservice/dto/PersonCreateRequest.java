@@ -1,30 +1,29 @@
 package de.innologic.personservice.dto;
 
-import jakarta.validation.constraints.Email;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+@Schema(name = "PersonCreateRequest", description = "Payload to register a new person record within a tenant.")
 public class PersonCreateRequest {
 
     @NotNull
+    @Schema(description = "Tenant (company) ID in whose scope the person is created.", example = "company-123", requiredMode = Schema.RequiredMode.REQUIRED)
     private String companyId;
 
     @Size(max = 120)
-    private String givenName;
+    @Schema(description = "Person's first name.", example = "Max")
+    private String firstName;
 
     @Size(max = 120)
-    private String familyName;
+    @Schema(description = "Person's last name.", example = "Mustermann")
+    private String lastName;
 
     @Size(max = 240)
+    @Schema(description = "Optional display name, used for UI representations.", example = "Max Mustermann")
     private String displayName;
 
-    @Email
-    @Size(max = 320)
-    private String email;
-
-    @Size(max = 64)
-    private String phone;
-
+    @Schema(description = "Optional free-text notes or remarks stored with the person.")
     private String notes;
 
     public String getCompanyId() {
@@ -35,20 +34,20 @@ public class PersonCreateRequest {
         this.companyId = companyId;
     }
 
-    public String getGivenName() {
-        return givenName;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setGivenName(String givenName) {
-        this.givenName = givenName;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getFamilyName() {
-        return familyName;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setFamilyName(String familyName) {
-        this.familyName = familyName;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public String getDisplayName() {
@@ -59,22 +58,6 @@ public class PersonCreateRequest {
         this.displayName = displayName;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
     public String getNotes() {
         return notes;
     }
@@ -83,5 +66,3 @@ public class PersonCreateRequest {
         this.notes = notes;
     }
 }
-
-

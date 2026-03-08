@@ -1,6 +1,7 @@
 package de.innologic.personservice.service.person;
 
 import de.innologic.personservice.domain.Person;
+import de.innologic.personservice.domain.PersonStatus;
 import de.innologic.personservice.dto.PersonCreateRequest;
 import de.innologic.personservice.dto.PersonResponse;
 import de.innologic.personservice.dto.PersonUpdateRequest;
@@ -66,6 +67,7 @@ class PersonCommandServiceAuditTest {
 
         PersonResponse result = personCommandService.createPerson("1", request, "ignored-header-actor");
 
+        assertThat(person.getStatus()).isEqualTo(PersonStatus.ACTIVE);
         assertThat(result.getCreatedBy()).isEqualTo("user-123");
         assertThat(result.getModifiedBy()).isEqualTo("user-123");
     }
@@ -99,6 +101,23 @@ class PersonCommandServiceAuditTest {
 
         assertThat(person.getAudit().getModifiedBy()).isEqualTo("user-789");
         assertThat(person.getAudit().getTrashedBy()).isEqualTo("user-789");
+        assertThat(person.getStatus()).isEqualTo(PersonStatus.TRASHED);
+    }
+
+    @Test
+    void restorePerson_shouldSetStatusActive() {
+        setJwtSubject("user-999");
+
+        Person person = new Person();
+        person.setCompanyId("1");
+        person.setStatus(PersonStatus.TRASHED);
+        when(personRepository.findByCompanyIdAndPublicId("1", "10")).thenReturn(Optional.of(person));
+        when(personRepository.save(any(Person.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(personMapper.toResponse(any(Person.class))).thenReturn(new PersonResponse());
+
+        personCommandService.restorePerson("1", "10", "ignored-header-actor");
+
+        assertThat(person.getStatus()).isEqualTo(PersonStatus.ACTIVE);
     }
 
     private void setJwtSubject(String subject) {

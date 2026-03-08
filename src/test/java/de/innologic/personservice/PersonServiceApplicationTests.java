@@ -9,7 +9,7 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(TestSecurityConfig.class)
-class PersonServiceApplicationTests extends AbstractMariaDbIntegrationTest {
+class PersonServiceApplicationTests {
 
     @Test
     void contextLoads() {

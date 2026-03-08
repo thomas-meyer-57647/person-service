@@ -19,7 +19,8 @@ Der Service nutzt folgende Umgebungsvariablen fuer die Datenbankverbindung:
 - `PERSON_DB_NAME` (Default: `person`)
 - `PERSON_DB_USER` (Default: `person`)
 - `PERSON_DB_PASSWORD` (Default: `person`)
-- `PERSONPORT` (Default: `8080`)
+- `PERSON_SERVER_PORT` (Default: `8113`)
+- `PERSON_MANAGEMENT_SERVER_PORT` (Default: `8213`)
 
 Beispiel (PowerShell):
 
@@ -29,13 +30,20 @@ $env:PERSON_DB_PORT="3306"
 $env:PERSON_DB_NAME="person"
 $env:PERSON_DB_USER="person"
 $env:PERSON_DB_PASSWORD="person"
-$env:PERSONPORT="8080"
+$env:PERSON_SERVER_PORT="8113"
+$env:PERSON_MANAGEMENT_SERVER_PORT="8213"
 ```
+
+Optional koennen folgende Umgebungsvariablen aus dem Pflichtenheft gesetzt werden:
+
+- `PERSON_API_DOCS_PATH` (Default: `/v3/api-docs`)
+- `PERSON_SWAGGER_UI_PATH` (Default: `/swagger-ui.html`)
+- `PERSON_ACTUATOR_BASE_PATH` (Default: `/actuator`)
 
 ### IntelliJ Run Configuration
 
 - Beispiel-ENV:
-  - `PERSON_DB_HOST=localhost;PERSON_DB_PORT=3306;PERSON_DB_NAME=person;PERSON_DB_USER=person;PERSON_DB_PASSWORD=person;PERSONPORT=8080`
+  - `PERSON_DB_HOST=localhost;PERSON_DB_PORT=3306;PERSON_DB_NAME=person;PERSON_DB_USER=person;PERSON_DB_PASSWORD=person;PERSON_SERVER_PORT=8113;PERSON_MANAGEMENT_SERVER_PORT=8213`
 - Hinweis: `Include system environment variables` kann aktiviert bleiben, da die Variablen service-spezifisch sind.
 
 ### Start mit Docker (ohne Profile)

@@ -15,12 +15,14 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 public interface TeamMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "teamId", ignore = true)
     @Mapping(target = "audit", ignore = true)
     Team toEntity(TeamCreateRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "companyId", ignore = true)
+    @Mapping(target = "teamId", ignore = true)
     @Mapping(target = "audit", ignore = true)
     void updateEntity(TeamUpdateRequest request, @MappingTarget Team team);
 
@@ -30,5 +32,6 @@ public interface TeamMapper {
     @Mapping(target = "modifiedBy", source = "audit.modifiedBy")
     @Mapping(target = "trashedAt", source = "audit.trashedAt")
     @Mapping(target = "trashedBy", source = "audit.trashedBy")
+    @Mapping(target = "teamId", source = "teamId")
     TeamResponse toResponse(Team team);
 }

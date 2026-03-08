@@ -1,42 +1,40 @@
 package de.innologic.personservice.dto;
 
-import jakarta.validation.constraints.Email;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
 
+@Schema(name = "PersonUpdateRequest", description = "Fields that can be updated on an existing person record.")
 public class PersonUpdateRequest {
 
     @Size(max = 120)
-    private String givenName;
+    @Schema(description = "New first name.", example = "Max")
+    private String firstName;
 
     @Size(max = 120)
-    private String familyName;
+    @Schema(description = "New last name.", example = "Mustermann")
+    private String lastName;
 
     @Size(max = 240)
+    @Schema(description = "Optional display name override.", example = "Max M.")
     private String displayName;
 
-    @Email
-    @Size(max = 320)
-    private String email;
-
-    @Size(max = 64)
-    private String phone;
-
+    @Schema(description = "Optional remarks; will be appended to the person's account notes.")
     private String notes;
 
-    public String getGivenName() {
-        return givenName;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setGivenName(String givenName) {
-        this.givenName = givenName;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getFamilyName() {
-        return familyName;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setFamilyName(String familyName) {
-        this.familyName = familyName;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public String getDisplayName() {
@@ -45,22 +43,6 @@ public class PersonUpdateRequest {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
     }
 
     public String getNotes() {

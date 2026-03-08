@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @Import(TestSecurityConfig.class)
 @WithMockUser(authorities = {"SCOPE_person:read", "SCOPE_person:write", "SCOPE_team:read", "SCOPE_team:write"})
-class PersonTeamIntegrationTests extends AbstractMariaDbIntegrationTest {
+class PersonTeamIntegrationTests {
 
     @Autowired
     private MockMvc mockMvc;

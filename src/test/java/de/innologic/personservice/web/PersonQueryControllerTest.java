@@ -1,6 +1,8 @@
 package de.innologic.personservice.web;
 
 import de.innologic.personservice.config.TestSecurityConfig;
+import de.innologic.personservice.domain.PersonStatus;
+import de.innologic.personservice.dto.ContactOwnerType;
 import de.innologic.personservice.dto.PersonResponse;
 import de.innologic.personservice.service.person.PersonQueryService;
 import de.innologic.personservice.web.error.GlobalExceptionHandler;
@@ -50,6 +52,8 @@ class PersonQueryControllerTest {
                 .andExpect(header().string("Content-Type", containsString("json")))
                 .andExpect(jsonPath("$.content[0].id").value(10))
                 .andExpect(jsonPath("$.content[0].companyId").value(1))
+                .andExpect(jsonPath("$.content[0].status").value("ACTIVE"))
+                .andExpect(jsonPath("$.content[0].contactOwnerType").value("PERSON"))
                 .andExpect(jsonPath("$.content[0].createdAt").isNotEmpty())
                 .andExpect(jsonPath("$.content[0].modifiedAt").isNotEmpty());
     }
@@ -74,6 +78,8 @@ class PersonQueryControllerTest {
                 .andExpect(header().string("Content-Type", containsString("json")))
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.companyId").value(1))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.contactOwnerType").value("PERSON"))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())
                 .andExpect(jsonPath("$.modifiedAt").isNotEmpty());
     }
@@ -93,8 +99,15 @@ class PersonQueryControllerTest {
     private PersonResponse samplePersonResponse(Long id, String companyId) {
         PersonResponse response = new PersonResponse();
         response.setId(id);
+        response.setPersonId("person-" + id);
         response.setCompanyId(companyId);
+        response.setFirstName("Max");
+        response.setLastName("Mustermann");
         response.setDisplayName("Max Mustermann");
+        response.setStatus(PersonStatus.ACTIVE);
+        response.setNotes("notes " + id);
+        response.setContactOwnerType(ContactOwnerType.PERSON);
+        response.setContactOwnerId("person-" + id);
         response.setCreatedAt(LocalDateTime.now().minusDays(1));
         response.setModifiedAt(LocalDateTime.now());
         response.setCreatedBy("actor-1");

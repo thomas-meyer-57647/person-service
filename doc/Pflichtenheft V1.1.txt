@@ -1,0 +1,701 @@
+﻿Pflichtenheft
+Service: person-service
+Konsolidierte, logisch bereinigte Endfassung
+Feld
+Wert
+Version
+01.01.26
+Stand
+08.03.2026
+Technologie
+Java 21, Spring Boot, Maven, REST/JSON, Spring Data JPA, Hibernate, Flyway, OpenAPI/Swagger
+Datenbank
+MySQL/MariaDB
+API/Application Port
+PERSON_SERVER_PORT, Default 8113
+Management/Actuator Port
+PERSON_MANAGEMENT_SERVER_PORT, Default 8213
+Context Path
+/api/v1
+
+Hinweis zur Umsetzung: Der aktuelle Quellcode des person-service ist an dieses Pflichtenheft anzupassen. Felder oder Verbindungen, die dem Soll-Ziel widersprechen, gelten als Legacy und sind schrittweise zu bereinigen.
+
+1. Inhaltsverzeichnis
+1. Ziel und Zweck
+2. Abgrenzung
+2.1 Enthalten
+2.2 Nicht enthalten
+3. Systemkontext / Abhängigkeiten
+3.1 Inbound
+3.2 Outbound
+3.3 Verantwortlichkeiten (Source of Truth)
+3.4 Datenflüsse
+3.5 Auswirkungen auf angrenzende Services
+4. Begriffe
+5. IAM-Absicherung und Mandantentrennung
+5.1 Grundprinzip
+5.2 JWT-Contract
+5.3 Tenant-Kontext und Konsistenzprüfungen
+5.4 Autorisierung über Rollen-/Admin-Logik
+6. REST-API - Übersicht
+6.1 Basis-URL, Versionierung, Content Types
+6.2 Endpunkte
+6.3 Standard-Query
+7. Funktionale Anforderungen
+7.1 Person anlegen
+7.2 Person lesen / listen
+7.3 Person ändern / trash / restore
+7.4 Team anlegen / lesen / ändern / trash / restore
+7.5 Team-Memberships verwalten
+7.6 Person-Klassifikationen verwalten
+7.7 Person-Klassifikationen zuweisen / entfernen
+7.8 Contact-Docking / Outbound-Kommunikation
+7.9 Optionale Referenzvalidierungen zu Company und User
+7.10 Ops-Endpunkte
+7.11 Beziehungen / Referenzmodell
+8. Datenmodell
+8.1 Person
+8.2 Team
+8.3 TeamMembership
+8.4 PersonClassification
+8.5 PersonClassificationAssignment
+8.6 OutboxEvent
+8.7 IdempotencyRecord
+8.8 AuditMetadata
+8.9 Referenz- und Integrationsattribute
+8.10 Öffentliche IDs und OwnerKey
+8.11 Persistenz- und Migrationsregeln
+9. Idempotency-Regeln
+10. Fehlerformat, Statuscodes, Fehlercodes
+10.1 Fehlerformat
+10.2 Fehlercode-Mapping
+11. Betrieb / Deployment / Konfiguration
+11.1 Serviceeigene Ports
+11.2 Pfad-Konfiguration
+11.3 JWT-Konfiguration
+11.4 Umgebungsvariablen
+11.5 Logging, Audit und Nachvollziehbarkeit
+11.6 Support-Diagnosezugriffe und Tenant-bezogene Auswertung
+11.7 Datenschutz, DSGVO, Lösch- und Aufbewahrungsregeln
+12. Tests und Abnahmekriterien
+12.1 Tests
+12.2 Abnahmekriterien
+
+2. 1. Ziel und Zweck
+Der person-service verwaltet die fachlichen Personen-Stammdaten eines Mandanten sowie Teams, Team-Mitgliedschaften und einen mandantenbezogenen Klassifikationskatalog für Personen. Der Service bildet den Menschen als Stammdatensatz ab, nicht aber dessen Beschäftigungsverhältnis, Arbeitsortlogik, Genehmigerkette oder Sollzeitmodell. Diese Verantwortlichkeiten liegen im employment-service.
+Kontaktstammdaten liegen ebenfalls nicht im person-service, sondern werden über das Owner-Modell ownerType + ownerId an den contact-service angedockt. Der communication-service nutzt diese Informationen nur für Empfängerauflösung und Versandprozesse; er ist keine Stammdatenquelle für E-Mail, Telefon oder Adresse.
+Personen tenant-scharf anlegen, lesen, ändern, trashen und wiederherstellen
+Teams tenant-scharf verwalten
+Team-Mitgliedschaften historisierbar verwalten
+Personen über Klassifikationen flexibel typisieren
+als OAuth2 Resource Server mit JWT arbeiten
+alle Controller, DTOs und Enums ausführlich per Swagger dokumentieren
+alle Funktionen positiv und negativ testen
+einen technischen Outbound-Weg für nachgelagerte Integrationen bereitstellen, ohne beim Start von Downstream-Services abhängig zu sein
+3. 2. Abgrenzung
+2.1 Enthalten
+Personen-Stammdaten
+Teams
+Team-Mitgliedschaften
+Person-Klassifikationen
+Soft-Delete / Restore
+Audit-Felder
+Mandantentrennung über companyId
+JWT-Validierung und Scope-basierte Autorisierung
+Owner-Docking für Kontaktdaten über ownerType=PERSON und ownerId=personId
+optionale Outbox/Eventing-Integration für nachgelagerte Prozesse
+2.2 Nicht enthalten
+Nicht Bestandteil
+Verantwortlicher Ort
+Login, Token-Ausstellung, MFA, Sessions, JWKS
+auth-service
+Benutzerverwaltung, Benutzerstatus, Provisionierung
+user-service
+Rollen, Rechte, Assignments
+iam-service
+Company- und Location-Stammdaten
+company-service
+Kontaktstammdaten wie E-Mail, Telefon, Adresse, Verifikation, doNotContact
+contact-service
+Versand, Retry, Delivery-Status
+communication-service
+Beschäftigungskontext wie employmentType, defaultWorkLocationId, managerUserId, workTimeProfileId
+employment-service
+JDBC als Persistenzstil
+nicht zulässig
+MongoDB als Datenbank
+nicht zulässig
+
+Wichtige Abgrenzung Person vs. Employment: Person bedeutet der Mensch als Stammdatensatz. Employment bedeutet die Beschäftigungsbeziehung dieses Menschen innerhalb einer Company. Sobald eine Information den Arbeitskontext beschreibt, gehört sie nicht mehr in den person-service.
+4. 3. Systemkontext / Abhängigkeiten
+3.1 Inbound
+Frontend / Portal / Backend zur Pflege von Personen, Teams und Mitgliedschaften
+interne Services, die personId referenzieren oder Personen lesen
+Monitoring / Betrieb für Health und Actuator
+optional user-service oder employment-service, wenn dort synchrone Lesefälle benötigt werden
+3.2 Outbound
+Zielservice
+Berücksichtigung
+Rolle im person-service
+Benötigte Daten
+auth-service / JWKS-Provider
+Ja
+JWT-Validierung
+JWKS/Public Keys, Issuer, Audience-Contract, Claims tenant_id, scp, subject_type, sub
+company-service
+Optional
+optionale Existenz-/Statusprüfung einer Company
+companyId, optional Company-Status
+user-service
+Optional
+optionale Konsistenzprüfung eines Person-Links
+userId, companyId, personId, optional User-Status
+contact-service
+Optional, fachlich korrekt
+Source of Truth für ContactPoints/Adressen eines Person-Owners
+ownerType, ownerId, contactPointId, type, kind, active, verified, doNotContact
+communication-service
+Optional, nicht Core
+nur für Benachrichtigungs- oder Folgeprozesse, nicht für Kontaktstammdaten
+keine Stammdaten; allenfalls technische Annahme von Folgejobs
+iam-service
+Optional
+nur falls später Remote-Policy-Entscheidungen gebraucht werden
+Rechte-/Policy-Antworten
+employment-service
+Nein als Core-Dependency
+fachliche Domänengrenze, nicht Core-Downstream
+keine Core-Daten im Person-CRUD
+
+Architekturregel: Für Person-CRUD ist auth-service die einzige echte Pflicht-Service-Abhängigkeit. contact-service ist die fachlich korrekte Docking-Stelle für Kontaktdaten; communication-service ist ausdrücklich nicht die Quelle von E-Mail-, Telefon- oder Adress-Stammdaten.
+3.3 Verantwortlichkeiten (Source of Truth)
+Bereich
+Führender Service
+Personen-Stammdaten
+person-service
+Teams und TeamMemberships
+person-service
+Person-Klassifikationen
+person-service
+Credentials, Passwort, MFA, Sessions, JWT, JWKS
+auth-service
+Rollen, Permissions, Module, Assignments
+iam-service
+Benutzerkonto und Person-Link am Benutzer
+user-service
+Company- und Location-Stammdaten
+company-service
+Kontaktpunkte, Adressen, Verifikation, doNotContact
+contact-service
+Versand, Retry und Delivery-Status von Nachrichten
+communication-service
+Beschäftigungskontext
+employment-service
+
+3.4 Datenflüsse
+3.4.1 Person-Lifecycle
+Schritt
+Beschreibung
+1
+Person innerhalb einer Company anlegen
+2
+Person tenant-scharf lesen und listen
+3
+Person ändern
+4
+Person soft-löschen
+5
+Person wiederherstellen
+6
+Audit-Felder aus dem Auth-Kontext befüllen
+7
+optionale Referenzvalidierungen dürfen die Startfähigkeit nicht verhindern
+
+3.4.2 Teams / Memberships
+Schritt
+Beschreibung
+1
+Team je Company anlegen
+2
+Team ändern, trashen und wiederherstellen
+3
+Membership Person ↔ Team anlegen
+4
+Membership historisierbar beenden, ohne Historie zu verlieren
+5
+Pro Person maximal ein aktives Hauptteam
+6
+Pro Team + Person maximal eine aktive Membership
+
+3.4.3 Kontakt und Kommunikation
+Schritt
+Beschreibung
+1
+Person-Responses liefern contactOwnerType=PERSON und contactOwnerId=personId
+2
+Kontaktstammdaten werden nicht im person-service gespeichert
+3
+Nachgelagerte Benachrichtigungen greifen über contact-service und optional communication-service
+4
+Downstream-Unerreichbarkeit ist Laufzeitfehler, kein Startfehler
+5
+Beschäftigungskontext wird weder geändert noch berechnet; dafür ist employment-service zuständig
+
+3.5 Auswirkungen auf angrenzende Services
+Service
+Änderungsbedarf
+Hinweis
+auth-service
+Kann so bleiben
+Nur sicherstellen, dass der JWT-Contract tenant_id, subject_type, scp/scope und eine für person-service passende Audience unterstützt.
+user-service
+Kann so bleiben
+personId bleibt die fachliche Referenz. Optional kann eine Konsistenzprüfung gegen person-service ergänzt werden.
+employment-service
+Kann so bleiben
+Beschäftigungsdaten bleiben ausschließlich dort. Sie dürfen nicht zusätzlich im person-service geführt werden.
+company-service
+Kann so bleiben
+Das bestehende Owner-Docking-Modell ist Vorbild. Keine funktionale Änderung erforderlich.
+contact-service
+Prüfen
+ownerType=PERSON und ownerId=personId müssen sauber unterstützt werden. Das ist die zentrale Docking-Stelle für ContactPoints und Adressen.
+communication-service
+Prüfen / ggf. bereinigen
+Empfängerauflösung darf nur über contact-service erfolgen. Kontaktstammdaten dürfen dort nicht als eigene Quelle geführt werden.
+iam-service
+Kann so bleiben
+Für das MVP reichen lokale JWT-Scopes im person-service. Remote-Policy-Aufrufe sind optional.
+
+5. 4. Begriffe
+Begriff
+Bedeutung
+Person
+fachlicher Stammdatensatz eines Menschen innerhalb eines Tenants
+Team
+organisatorische Gruppe innerhalb einer Company
+TeamMembership
+historisierte Zuordnung Person zu Team
+PersonClassification
+mandantenbezogener Klassifikationskatalog
+OwnerKey
+ownerType + ownerId als Docking-Schlüssel zu contact-service
+Soft-Delete / TRASHED
+logisch gelöscht über trashedAt / trashedBy
+tenant_id
+Tenant-Claim im JWT; Quelle der Wahrheit
+subject_type
+USER oder SERVICE
+Employment
+Beschäftigungsprofil einer Person; nicht Teil des person-service
+
+6. 5. IAM-Absicherung und Mandantentrennung
+5.1 Grundprinzip
+Der person-service muss als OAuth2 Resource Server betrieben werden.
+Er validiert JWTs, stellt aber selbst keine Tokens aus.
+Nicht explizit freigegebene Fachendpunkte sind nicht erreichbar.
+Serverseitige Fach-Sessions sind nicht zulässig.
+5.2 JWT-Contract
+Claim / Regel
+Vorgabe
+Pflicht-Claims
+iss, sub, aud, iat, exp, jti, tenant_id, subject_type, scp oder scope
+Audience
+aud muss person-service enthalten
+Subject Type
+subject_type muss USER oder SERVICE sein
+Tolerierte Claims
+sid, amr, auth_time
+Signaturprüfung
+über JWKS oder Issuer-Konfiguration
+
+5.3 Tenant-Kontext und Konsistenzprüfungen
+tenant_id im JWT ist Quelle der Wahrheit
+{companyId} im Pfad muss tenant_id entsprechen
+X-Tenant-Id darf unterstützt werden
+wenn Pfad, Header und Claim gleichzeitig gesetzt sind, müssen sie konsistent sein
+Abweichungen führen zu 403 TENANT_MISMATCH
+5.4 Autorisierung über Rollen-/Admin-Logik
+Bereich
+Mindest-Scope
+Persons lesen
+person:read
+Persons schreiben
+person:write
+Teams lesen
+team:read
+Teams schreiben
+team:write
+feinere Granularität optional
+person:classification:write, team:membership:write, ops:read
+
+7. 6. REST-API - Übersicht
+6.1 Basis-URL, Versionierung, Content Types
+Feld
+Vorgabe
+Basis
+/api/v1
+Request/Response
+application/json
+Fehlerformat
+application/json
+Versionierung
+über Pfad
+Standard-Header
+Authorization, X-Correlation-Id, optional X-Tenant-Id, optional Idempotency-Key
+Swagger
+Alle Controller, DTOs und Enums müssen ausführlich dokumentiert sein
+
+6.2 Endpunkte
+Bereich
+Route
+Persons
+POST /api/v1/companies/{companyId}/persons
+Persons
+GET /api/v1/companies/{companyId}/persons
+Persons
+GET /api/v1/companies/{companyId}/persons/{personId}
+Persons
+PATCH /api/v1/companies/{companyId}/persons/{personId}
+Persons
+POST /api/v1/companies/{companyId}/persons/{personId}/trash
+Persons
+POST /api/v1/companies/{companyId}/persons/{personId}/restore
+Teams
+POST /api/v1/companies/{companyId}/teams
+Teams
+GET /api/v1/companies/{companyId}/teams
+Teams
+GET /api/v1/companies/{companyId}/teams/{teamId}
+Teams
+PATCH /api/v1/companies/{companyId}/teams/{teamId}
+Teams
+POST /api/v1/companies/{companyId}/teams/{teamId}/trash
+Teams
+POST /api/v1/companies/{companyId}/teams/{teamId}/restore
+Memberships
+GET /api/v1/companies/{companyId}/teams/{teamId}/members
+Memberships
+POST /api/v1/companies/{companyId}/teams/{teamId}/members
+Memberships
+DELETE /api/v1/companies/{companyId}/teams/{teamId}/members/{personId}
+Person Classifications
+POST /api/v1/companies/{companyId}/person-classifications
+Person Classifications
+GET /api/v1/companies/{companyId}/person-classifications
+Person Classifications
+PATCH /api/v1/companies/{companyId}/person-classifications/{classificationId}
+Person Classifications
+POST /api/v1/companies/{companyId}/person-classifications/{classificationId}/deactivate
+Classification Assignments
+POST /api/v1/companies/{companyId}/persons/{personId}/classifications
+Classification Assignments
+DELETE /api/v1/companies/{companyId}/persons/{personId}/classifications/{assignmentId}
+Ops
+GET /person/ping
+Ops
+GET /person/version
+
+6.3 Standard-Query
+page
+size
+sort
+q
+includeTrashed
+teamId
+classificationKey
+classificationCode
+8. 7. Funktionale Anforderungen
+7.1 Person anlegen
+Person tenant-scharf anlegen
+Audit-Felder setzen und öffentliche personId erzeugen
+Kontaktstammdaten nicht im Person-Datensatz speichern
+7.2 Person lesen / listen
+Einzelperson und Listen mit Paging, Sortierung und Filterung liefern
+Getrashte Datensätze standardmäßig ausblenden
+7.3 Person ändern / trash / restore
+Ändern, logisch löschen und wiederherstellen
+Optimistic Locking bei konkurrierenden Änderungen
+7.4 Team anlegen / lesen / ändern / trash / restore
+Teams tenant-scharf verwalten
+name ist Pflicht und pro Company eindeutig
+code ist optionale spätere Erweiterung
+7.5 Team-Memberships verwalten
+Mitgliedschaften historisierbar verwalten
+maximal ein aktives Hauptteam pro Person
+maximal eine aktive Membership pro Team und Person
+7.6 Person-Klassifikationen verwalten
+mandantenbezogenen Klassifikationskatalog verwalten
+(companyId, key, code) ist eindeutig
+7.7 Person-Klassifikationen zuweisen / entfernen
+Klassifikationen zuweisen, entfernen oder fachlich beenden
+7.8 Contact-Docking / Outbound-Kommunikation
+Der person-service darf keine E-Mail-, Telefon- oder Adressdaten als Source of Truth verwalten.
+Person-Responses sollen contactOwnerType="PERSON" und contactOwnerId=personId liefern.
+Bevorzugter technischer Weg für Folgeprozesse ist Outbox/Eventing.
+Direkte HTTP-Validierung oder Folgeaufrufe an Downstream-Services sind optional.
+Downstreams dürfen den Start des Services nicht blockieren.
+7.9 Optionale Referenzvalidierungen zu Company und User
+Company-Existenzprüfung optional aktivierbar
+Konsistenzprüfung eines Person-Links optional aktivierbar
+Prüfungen sind Soft Dependencies und keine Startblockade
+7.10 Ops-Endpunkte
+Es sollen schlanke Ops-Endpunkte für Ping und Versionsdiagnose existieren.
+7.11 Beziehungen / Referenzmodell
+user-service kann personId speichern; Person bleibt im person-service
+employment-service referenziert personId, bleibt aber Source of Truth für Beschäftigungskontext
+contact-service dockt über ownerType=PERSON und ownerId=personId an
+communication-service versendet an aufgelöste ContactPoints, ist aber nicht der Halter der Kontaktstammdaten
+9. 8. Datenmodell
+8.1 Person
+personId
+companyId
+firstName
+lastName
+displayName optional
+status
+notes optional
+Audit-Felder
+version
+8.2 Team
+teamId
+companyId
+name
+description optional
+leadPersonId optional
+parentTeamId optional
+status
+Audit-Felder
+version
+Regel: Unique(companyId, name)
+8.3 TeamMembership
+membershipId
+companyId
+teamId
+personId
+validFrom
+validTo
+isPrimary
+memberRole optional
+Audit-Felder
+version
+8.4 PersonClassification
+classificationId
+companyId
+key
+code
+label
+active
+Audit-Felder
+version
+8.5 PersonClassificationAssignment
+assignmentId
+companyId
+personId
+classificationId
+isPrimary optional
+validFrom optional
+validTo optional
+Audit-Felder
+version
+8.6 OutboxEvent
+eventId
+companyId
+eventType
+aggregateType
+aggregateId
+payloadJson
+occurredAtUtc
+status
+retryCount
+lastError optional
+8.7 IdempotencyRecord
+id
+tenantId
+endpointKey
+idempotencyKey
+requestHash
+responseStatus
+responseBody
+createdAt
+expiresAt
+8.8 AuditMetadata
+createdAt
+createdBy
+modifiedAt
+modifiedBy
+trashedAt
+trashedBy
+8.9 Referenz- und Integrationsattribute
+contactOwnerType
+contactOwnerId
+linkedUserId optional nur als technische Referenz
+correlationId
+8.10 Öffentliche IDs und OwnerKey
+personId ist fachlich öffentliche ID
+teamId, membershipId und classificationId sind ebenfalls öffentliche IDs
+ownerType=PERSON und ownerId=personId ist der verbindliche Docking-Key zu contact-service
+8.11 Persistenz- und Migrationsregeln
+produktiv nur MySQL/MariaDB
+ausschließlich JPA/Hibernate
+kein JDBC als Persistenzstil
+kein MongoDB
+Migrationen versioniert über Flyway
+Tests müssen Testcontainers und H2 unterstützen
+Migrationshinweis: Falls der aktuelle Quellcode im Person-Modell noch email-, phone- oder ähnliche Kontaktfelder enthält, gelten diese als Legacy. Neue Schreibpfade auf diese Felder sind zu vermeiden; mittelfristig sind sie in den contact-service zu verlagern.
+10. 9. Idempotency-Regeln
+Im person-service ist Idempotency selektiv vorzusehen.
+Priorität
+Endpunkte
+MUSS
+POST /api/v1/companies/{companyId}/persons; POST /api/v1/companies/{companyId}/teams; POST /api/v1/companies/{companyId}/person-classifications
+SOLL
+POST .../trash; POST .../restore; POST .../members; POST .../classifications
+Regel
+gleicher Key + gleicher Endpoint + gleicher Tenant + gleicher Payload-Hash -> gleiche Antwort; sonst 409 IDEMPOTENCY_CONFLICT
+
+11. 10. Fehlerformat, Statuscodes, Fehlercodes
+10.1 Fehlerformat
+timestamp
+status
+code
+message
+path
+optional correlationId
+optional details
+10.2 Fehlercode-Mapping
+Code
+Bedeutung
+VALIDATION_ERROR
+Request verletzt Validierung
+UNAUTHENTICATED
+Authorization Header fehlt oder Tokenvalidierung scheitert
+FORBIDDEN
+Zugriff grundsätzlich nicht erlaubt
+SCOPE_MISSING
+erforderlicher Scope fehlt
+TENANT_MISMATCH
+Pfad, Header und Claim passen nicht zusammen
+PERSON_NOT_FOUND
+Person existiert nicht oder ist nicht sichtbar
+TEAM_NOT_FOUND
+Team existiert nicht oder ist nicht sichtbar
+MEMBERSHIP_NOT_FOUND
+Membership existiert nicht
+CLASSIFICATION_NOT_FOUND
+Klassifikation existiert nicht
+TEAM_NAME_ALREADY_EXISTS
+Team-Name im Tenant bereits vergeben
+PRIMARY_TEAM_ALREADY_EXISTS
+aktive Hauptteam-Regel verletzt
+ACTIVE_MEMBERSHIP_ALREADY_EXISTS
+aktive Membership-Regel verletzt
+IDEMPOTENCY_CONFLICT
+gleicher Key bei anderer Payload
+VERSION_CONFLICT
+Optimistic Locking schlägt fehl
+DOWNSTREAM_UNAVAILABLE
+optionaler Downstream nicht erreichbar
+INTERNAL_ERROR
+unerwarteter Serverfehler
+
+12. 11. Betrieb / Deployment / Konfiguration
+11.1 Serviceeigene Ports
+Bereich
+Vorgabe
+API/Application Port
+PERSON_SERVER_PORT, Default 8113
+Management/Actuator Port
+PERSON_MANAGEMENT_SERVER_PORT, Default 8213
+Optionale Ports
+keine Pflichtports; Debug/JMX nur optional und standardmäßig deaktiviert
+Regel bei parallelem Betrieb
+Ports ausschließlich per ENV; API und Management getrennt konfigurierbar
+
+11.2 Pfad-Konfiguration
+PERSON_CONTEXT_PATH
+PERSON_SWAGGER_UI_PATH
+PERSON_API_DOCS_PATH
+PERSON_ACTUATOR_BASE_PATH
+11.3 JWT-Konfiguration
+PERSON_JWT_JWKS_URI
+PERSON_JWT_ISSUER
+PERSON_JWT_AUDIENCE
+PERSON_JWT_CLOCK_SKEW_SECONDS
+PERSON_TENANT_CLAIM
+11.4 Umgebungsvariablen
+Variable
+Zweck
+PERSON_SERVER_PORT
+API-Port
+PERSON_MANAGEMENT_SERVER_PORT
+Management-Port
+PERSON_DB_HOST / PORT / NAME / USER / PASSWORD
+Datenbankanbindung
+PERSON_JWT_JWKS_URI / ISSUER / AUDIENCE
+JWT-/JWKS-Konfiguration
+PERSON_COMPANY_SERVICE_BASE_URL
+optionale Company-Prüfung
+PERSON_USER_SERVICE_BASE_URL
+optionale User-Konsistenzprüfung
+PERSON_CONTACT_SERVICE_BASE_URL
+Contact-Docking
+PERSON_COMMUNICATION_SERVICE_BASE_URL
+optionale Folgeprozesse / Benachrichtigung
+PERSON_IAM_SERVICE_BASE_URL
+optionale Remote-Policy-Integration
+PERSON_OUTBOX_ENABLED
+Outbox aktiv/inaktiv
+PERSON_SWAGGER_ENABLED
+Swagger aktiv/inaktiv
+
+11.5 Logging, Audit und Nachvollziehbarkeit
+strukturiertes Logging
+X-Correlation-Id führen
+keine sensitiven Daten im Klartext loggen
+Fachänderungen auditieren
+externe Aufrufe nachvollziehbar protokollieren
+11.6 Support-Diagnosezugriffe und Tenant-bezogene Auswertung
+Diagnosezugriffe von Fachzugriffen trennen
+auditierbar
+tenant-scharf
+personenbezogene Inhalte nur minimal offenlegen
+11.7 Datenschutz, DSGVO, Lösch- und Aufbewahrungsregeln
+Datenminimierung umsetzen
+Kontaktstammdaten nicht doppelt halten
+Soft-Delete und Restore sauber unterstützen
+definierte Retention/Purge-Regeln ermöglichen
+Audit und Support datensparsam umsetzen
+13. 12. Tests und Abnahmekriterien
+12.1 Tests
+Für alle Funktionen müssen positive und negative Tests vorhanden sein.
+Pflicht-Testarten: Controller-/Web-Layer-Tests, Security-Tests, Validierungs-Tests, Integrations-Tests, Datenbank-Tests, JWT-Contract-Tests, Swagger-/OpenAPI-Prüfungen, Outbox-/Outbound-Tests.
+Testcontainers müssen unterstützt werden.
+H2 muss unterstützt werden.
+Tests müssen auch ohne Docker lauffähig sein.
+Downstream-Services müssen mockbar oder stubbar sein, weil momentan keine anderen Services laufen.
+Pro dokumentiertem Endpoint mindestens ein Positiv- und ein Negativtest.
+12.2 Abnahmekriterien
+Kriterium
+Muss erfüllt sein
+Ports
+PERSON_SERVER_PORT läuft standardmäßig auf 8113; PERSON_MANAGEMENT_SERVER_PORT auf 8213
+Persistenz
+produktiv nur MySQL/MariaDB; ausschließlich JPA/Hibernate; kein JDBC-Persistenzstil; kein MongoDB
+JWT
+JWT-Validierung gegen den Auth-Contract funktioniert
+Tenant
+Tenant-Isolation greift auf allen Fachendpunkten
+Fachfunktionen
+Personen, Teams, Memberships und Klassifikationen funktionieren vollständig
+Contact-Docking
+OwnerKey / contactOwnerType und contactOwnerId sind sauber beschrieben und technisch vorgesehen
+Swagger
+Controller, DTOs und Enums vollständig dokumentiert
+Tests
+positive und negative Tests für alle Funktionen vorhanden
+Betrieb
+Service bleibt auch ohne laufende Downstream-Services startbar
+Legacy-Bereinigung
+Kontaktstammdaten im Person-Modell werden nicht mehr als Soll-Zustand verwendet
+

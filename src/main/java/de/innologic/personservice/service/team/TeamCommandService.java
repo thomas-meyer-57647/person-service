@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -57,15 +58,16 @@ public class TeamCommandService {
                     throw new ConflictException("Team name already exists in this company.");
         });
         Team team = teamMapper.toEntity(request);
+        team.setTeamId(UUID.randomUUID().toString());
         team.setCompanyId(companyId);
         team.getAudit().setCreatedBy(actor);
         team.getAudit().setModifiedBy(actor);
         return teamMapper.toResponse(teamRepository.save(team));
     }
 
-    public TeamResponse updateTeam(String companyId, Long teamId, TeamUpdateRequest request, String actorId) {
+    public TeamResponse updateTeam(String companyId, String teamId, TeamUpdateRequest request, String actorId) {
         String actor = currentActor.subjectOrSystem();
-        Team team = teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+        Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
         if (request.getName() != null && !request.getName().equals(team.getName())) {
             teamRepository.findByCompanyIdAndNameAndAudit_TrashedAtIsNull(companyId, request.getName())
@@ -78,14 +80,14 @@ public class TeamCommandService {
         return teamMapper.toResponse(teamRepository.save(team));
     }
 
-    public TeamResponse trashTeam(String companyId, Long teamId, String actorId) {
+    public TeamResponse trashTeam(String companyId, String teamId, String actorId) {
         String actor = currentActor.subjectOrSystem();
-        Team team = teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+        Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
         team.getAudit().setTrashedAt(LocalDateTime.now());
         team.getAudit().setTrashedBy(actor);
         team.getAudit().setModifiedBy(actor);
-        teamMemberRepository.findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(companyId, teamId)
+        teamMemberRepository.findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(companyId, team.getId())
                 .forEach(member -> {
                     member.getAudit().setTrashedAt(LocalDateTime.now());
                     member.getAudit().setTrashedBy(actor);
@@ -97,9 +99,9 @@ public class TeamCommandService {
         return teamMapper.toResponse(teamRepository.save(team));
     }
 
-    public TeamResponse restoreTeam(String companyId, Long teamId, String actorId) {
+    public TeamResponse restoreTeam(String companyId, String teamId, String actorId) {
         String actor = currentActor.subjectOrSystem();
-        Team team = teamRepository.findByIdAndCompanyId(teamId, companyId)
+        Team team = teamRepository.findByTeamIdAndCompanyId(teamId, companyId)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
         team.getAudit().setTrashedAt(null);
         team.getAudit().setTrashedBy(null);
@@ -107,13 +109,20 @@ public class TeamCommandService {
         return teamMapper.toResponse(teamRepository.save(team));
     }
 
-    public TeamMemberResponse addTeamMember(String companyId, Long teamId, TeamMemberAddRequest request, String actorId) {
+    public TeamMemberResponse addTeamMember(String companyId, String teamId, TeamMemberAddRequest request, String actorId) {
         String actor = currentActor.subjectOrSystem();
-        Team team = teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+        LocalDateTime now = LocalDateTime.now();
+        Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
-        Person person = personRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(request.getPersonId(), companyId)
+        Person person = personRepository.findByCompanyIdAndPublicIdAndAudit_TrashedAtIsNull(companyId, request.getPersonId())
                 .orElseThrow(() -> new NotFoundException("Person not found for company and id."));
-        teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, teamId, request.getPersonId())
+        if (Boolean.TRUE.equals(request.getIsPrimary())) {
+            teamMemberRepository.findByCompanyIdAndPerson_IdAndIsPrimaryTrueAndLeftAtIsNullAndAudit_TrashedAtIsNull(companyId, person.getId())
+                    .ifPresent(existing -> {
+                        throw new ConflictException("Person already has an active primary membership.");
+                    });
+        }
+        teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, team.getId(), person.getId())
                 .ifPresent(existing -> {
                     throw new ConflictException("Person is already an active member of this team.");
                 });
@@ -121,16 +130,21 @@ public class TeamCommandService {
         teamMember.setCompanyId(companyId);
         teamMember.setTeam(team);
         teamMember.setPerson(person);
+        teamMember.setMembershipId(UUID.randomUUID().toString());
+        teamMember.setJoinedAt(resolveJoinedAt(request.getJoinedAt(), now));
+        teamMember.setIsPrimary(Boolean.TRUE.equals(request.getIsPrimary()));
         teamMember.getAudit().setCreatedBy(actor);
         teamMember.getAudit().setModifiedBy(actor);
         return teamMemberMapper.toResponse(teamMemberRepository.save(teamMember));
     }
 
-    public void removeTeamMember(String companyId, Long teamId, String personId, String actorId) {
+    public void removeTeamMember(String companyId, String teamId, String personId, String actorId) {
         String actor = currentActor.subjectOrSystem();
+        Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+                .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
         Person person = personRepository.findByCompanyIdAndPublicId(companyId, personId)
                 .orElseThrow(() -> new NotFoundException("Person not found for company and id."));
-        TeamMember teamMember = teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, teamId, person.getId())
+        TeamMember teamMember = teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, team.getId(), person.getId())
                 .orElseThrow(() -> new NotFoundException("Active team member relation not found."));
         teamMember.getAudit().setTrashedAt(LocalDateTime.now());
         teamMember.getAudit().setTrashedBy(actor);
@@ -145,6 +159,16 @@ public class TeamCommandService {
         if (bodyCompanyId == null || !bodyCompanyId.equals(pathCompanyId)) {
             throw new BadRequestException("companyId in body must match companyId in path.");
         }
+    }
+
+    private LocalDateTime resolveJoinedAt(LocalDateTime requested, LocalDateTime current) {
+        if (requested == null) {
+            return current;
+        }
+        if (requested.isAfter(current)) {
+            throw new BadRequestException("joinedAt must be in the past or present.");
+        }
+        return requested;
     }
 
 }

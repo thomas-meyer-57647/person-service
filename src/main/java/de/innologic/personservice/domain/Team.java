@@ -14,11 +14,22 @@ import jakarta.persistence.UniqueConstraint;
 )
 public class Team extends BaseEntity {
 
+    @Column(name = "team_id", length = 36, nullable = false, unique = true)
+    private String teamId;
+
     @Column(name = "name", nullable = false, length = 160)
     private String name;
 
     @Column(name = "description")
     private String description;
+
+    public String getTeamId() {
+        return teamId;
+    }
+
+    public void setTeamId(String teamId) {
+        this.teamId = teamId;
+    }
 
     public String getName() {
         return name;

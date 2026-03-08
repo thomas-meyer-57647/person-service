@@ -1,5 +1,6 @@
 package de.innologic.personservice.service.team;
 
+import de.innologic.personservice.domain.Team;
 import de.innologic.personservice.dto.TeamMemberResponse;
 import de.innologic.personservice.dto.TeamResponse;
 import de.innologic.personservice.mapper.TeamMapper;
@@ -39,16 +40,16 @@ public class TeamQueryService {
         return teamRepository.search(companyId, normalize(q), includeTrashed, pageable).map(teamMapper::toResponse);
     }
 
-    public TeamResponse getTeam(String companyId, Long teamId) {
-        return teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+    public TeamResponse getTeam(String companyId, String teamId) {
+        return teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
                 .map(teamMapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
     }
 
-    public List<TeamMemberResponse> getTeamMembers(String companyId, Long teamId) {
-        teamRepository.findByIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
+    public List<TeamMemberResponse> getTeamMembers(String companyId, String teamId) {
+        Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
                 .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
-        return teamMemberRepository.findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(companyId, teamId).stream()
+        return teamMemberRepository.findAllByCompanyIdAndTeam_IdAndAudit_TrashedAtIsNull(companyId, team.getId()).stream()
                 .map(teamMemberMapper::toResponse)
                 .toList();
     }
