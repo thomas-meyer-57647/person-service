@@ -17,6 +17,8 @@ import de.innologic.personservice.security.CurrentActor;
 import de.innologic.personservice.web.error.BadRequestException;
 import de.innologic.personservice.web.error.ConflictException;
 import de.innologic.personservice.web.error.NotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,9 @@ import java.util.UUID;
 @Service
 @Transactional
 public class TeamCommandService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TeamCommandService.class);
+
 
     private final TeamRepository teamRepository;
     private final PersonRepository personRepository;
@@ -51,39 +56,56 @@ public class TeamCommandService {
     }
 
     public TeamResponse createTeam(String companyId, TeamCreateRequest request, String actorId) {
+        LOG.info("Creating team request company={} name={} actor={}", companyId, request.getName(), actorId);
         String actor = currentActor.subjectOrSystem();
         validateCompany(request.getCompanyId(), companyId);
         teamRepository.findByCompanyIdAndNameAndAudit_TrashedAtIsNull(companyId, request.getName())
-                .ifPresent(team -> {
+                .ifPresent(existing -> {
+                    LOG.warn("Team name '{}' already exists for company={}", existing.getName(), companyId);
                     throw new ConflictException("Team name already exists in this company.");
-        });
+                });
         Team team = teamMapper.toEntity(request);
         team.setTeamId(UUID.randomUUID().toString());
         team.setCompanyId(companyId);
         team.getAudit().setCreatedBy(actor);
         team.getAudit().setModifiedBy(actor);
-        return teamMapper.toResponse(teamRepository.save(team));
+        Team saved = teamRepository.save(team);
+        TeamResponse response = teamMapper.toResponse(saved);
+        LOG.info("Created teamId={} for company={}", response.getTeamId(), companyId);
+        return response;
     }
 
     public TeamResponse updateTeam(String companyId, String teamId, TeamUpdateRequest request, String actorId) {
+        LOG.info("Updating team request company={} team={} actor={}", companyId, teamId, actorId);
         String actor = currentActor.subjectOrSystem();
         Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
-                .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+                .orElseThrow(() -> {
+                    LOG.warn("Team not found for company={} team={}", companyId, teamId);
+                    return new NotFoundException("Team not found for company and id.");
+                });
         if (request.getName() != null && !request.getName().equals(team.getName())) {
             teamRepository.findByCompanyIdAndNameAndAudit_TrashedAtIsNull(companyId, request.getName())
                     .ifPresent(existing -> {
+                        LOG.warn("Team name '{}' already exists for company={}", request.getName(), companyId);
                         throw new ConflictException("Team name already exists in this company.");
                     });
         }
         teamMapper.updateEntity(request, team);
         team.getAudit().setModifiedBy(actor);
-        return teamMapper.toResponse(teamRepository.save(team));
+        Team saved = teamRepository.save(team);
+        TeamResponse response = teamMapper.toResponse(saved);
+        LOG.info("Updated teamId={} for company={}", response.getTeamId(), companyId);
+        return response;
     }
 
     public TeamResponse trashTeam(String companyId, String teamId, String actorId) {
+        LOG.info("Trashing team request company={} team={} actor={}", companyId, teamId, actorId);
         String actor = currentActor.subjectOrSystem();
         Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
-                .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+                .orElseThrow(() -> {
+                    LOG.warn("Team not found for trash operation company={} team={}", companyId, teamId);
+                    return new NotFoundException("Team not found for company and id.");
+                });
         team.getAudit().setTrashedAt(LocalDateTime.now());
         team.getAudit().setTrashedBy(actor);
         team.getAudit().setModifiedBy(actor);
@@ -96,20 +118,31 @@ public class TeamCommandService {
                         member.setLeftAt(LocalDateTime.now());
                     }
                 });
-        return teamMapper.toResponse(teamRepository.save(team));
+        Team saved = teamRepository.save(team);
+        TeamResponse response = teamMapper.toResponse(saved);
+        LOG.info("Trashed teamId={} for company={}", response.getTeamId(), companyId);
+        return response;
     }
 
     public TeamResponse restoreTeam(String companyId, String teamId, String actorId) {
+        LOG.info("Restoring team request company={} team={} actor={}", companyId, teamId, actorId);
         String actor = currentActor.subjectOrSystem();
         Team team = teamRepository.findByTeamIdAndCompanyId(teamId, companyId)
-                .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+                .orElseThrow(() -> {
+                    LOG.warn("Team not found for restoration company={} team={}", companyId, teamId);
+                    return new NotFoundException("Team not found for company and id.");
+                });
         team.getAudit().setTrashedAt(null);
         team.getAudit().setTrashedBy(null);
         team.getAudit().setModifiedBy(actor);
-        return teamMapper.toResponse(teamRepository.save(team));
+        Team saved = teamRepository.save(team);
+        TeamResponse response = teamMapper.toResponse(saved);
+        LOG.info("Restored teamId={} for company={}", response.getTeamId(), companyId);
+        return response;
     }
 
     public TeamMemberResponse addTeamMember(String companyId, String teamId, TeamMemberAddRequest request, String actorId) {
+        LOG.info("Adding team member request company={} team={} person={} actor={}", companyId, teamId, request.getPersonId(), actorId);
         String actor = currentActor.subjectOrSystem();
         LocalDateTime now = LocalDateTime.now();
         Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
@@ -119,11 +152,13 @@ public class TeamCommandService {
         if (Boolean.TRUE.equals(request.getIsPrimary())) {
             teamMemberRepository.findByCompanyIdAndPerson_IdAndIsPrimaryTrueAndLeftAtIsNullAndAudit_TrashedAtIsNull(companyId, person.getId())
                     .ifPresent(existing -> {
+                        LOG.warn("Person {} already has an active primary membership in company={}", request.getPersonId(), companyId);
                         throw new ConflictException("Person already has an active primary membership.");
                     });
         }
         teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, team.getId(), person.getId())
                 .ifPresent(existing -> {
+                    LOG.warn("Person {} already active on team={} company={}", request.getPersonId(), teamId, companyId);
                     throw new ConflictException("Person is already an active member of this team.");
                 });
         TeamMember teamMember = teamMemberMapper.toEntity(request);
@@ -135,24 +170,38 @@ public class TeamCommandService {
         teamMember.setIsPrimary(Boolean.TRUE.equals(request.getIsPrimary()));
         teamMember.getAudit().setCreatedBy(actor);
         teamMember.getAudit().setModifiedBy(actor);
-        return teamMemberMapper.toResponse(teamMemberRepository.save(teamMember));
+        TeamMember saved = teamMemberRepository.save(teamMember);
+        TeamMemberResponse response = teamMemberMapper.toResponse(saved);
+        LOG.info("Added membershipId={} team={} person={}", response.getMembershipId(), teamId, response.getPersonId());
+        return response;
     }
 
     public void removeTeamMember(String companyId, String teamId, String personId, String actorId) {
+        LOG.info("Removing team member request company={} team={} person={} actor={}", companyId, teamId, personId, actorId);
         String actor = currentActor.subjectOrSystem();
         Team team = teamRepository.findByTeamIdAndCompanyIdAndAudit_TrashedAtIsNull(teamId, companyId)
-                .orElseThrow(() -> new NotFoundException("Team not found for company and id."));
+                .orElseThrow(() -> {
+                    LOG.warn("Team not found for removal company={} team={}", companyId, teamId);
+                    return new NotFoundException("Team not found for company and id.");
+                });
         Person person = personRepository.findByCompanyIdAndPublicId(companyId, personId)
-                .orElseThrow(() -> new NotFoundException("Person not found for company and id."));
+                .orElseThrow(() -> {
+                    LOG.warn("Person not found for removal company={} person={}", companyId, personId);
+                    return new NotFoundException("Person not found for company and id.");
+                });
         TeamMember teamMember = teamMemberRepository.findByCompanyIdAndTeam_IdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, team.getId(), person.getId())
-                .orElseThrow(() -> new NotFoundException("Active team member relation not found."));
+                .orElseThrow(() -> {
+                    LOG.warn("Active membership not found company={} team={} person={}", companyId, teamId, personId);
+                    return new NotFoundException("Active team member relation not found.");
+                });
         teamMember.getAudit().setTrashedAt(LocalDateTime.now());
         teamMember.getAudit().setTrashedBy(actor);
         teamMember.getAudit().setModifiedBy(actor);
         if (teamMember.getLeftAt() == null) {
             teamMember.setLeftAt(LocalDateTime.now());
         }
-        teamMemberRepository.save(teamMember);
+        TeamMember saved = teamMemberRepository.save(teamMember);
+        LOG.info("Removed membershipId={} team={} person={}", saved.getMembershipId(), teamId, personId);
     }
 
     private void validateCompany(String bodyCompanyId, String pathCompanyId) {

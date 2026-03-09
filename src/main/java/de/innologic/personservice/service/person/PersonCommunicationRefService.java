@@ -7,6 +7,8 @@ import de.innologic.personservice.repository.PersonCommunicationRefRepository;
 import de.innologic.personservice.repository.PersonRepository;
 import de.innologic.personservice.security.CurrentActor;
 import de.innologic.personservice.web.error.NotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class PersonCommunicationRefService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PersonCommunicationRefService.class);
+
 
     private final PersonRepository personRepository;
     private final PersonCommunicationRefRepository personCommunicationRefRepository;
@@ -38,12 +43,14 @@ public class PersonCommunicationRefService {
 
     @Transactional(readOnly = true)
     public PersonCommunicationRefsResponse getRefs(String companyId, String personId) {
+        LOG.info("Fetching communication refs company={} person={}", companyId, personId);
         Person person = assertPersonInCompany(companyId, personId);
         List<String> refs = personCommunicationRefRepository
                 .findAllByCompanyIdAndPerson_IdAndAudit_TrashedAtIsNull(companyId, person.getId())
                 .stream()
                 .map(PersonCommunicationRef::getCommunicationId)
                 .toList();
+        LOG.info("Found {} communication refs for company={} person={}", refs.size(), companyId, personId);
         return toResponse(companyId, personId, refs);
     }
 
@@ -54,6 +61,7 @@ public class PersonCommunicationRefService {
         LocalDateTime now = LocalDateTime.now();
 
         Set<String> desired = normalizeDistinct(communicationIds);
+        LOG.info("Replacing communication refs company={} person={} actor={} desiredCount={}", companyId, personId, actorId, desired.size());
         List<PersonCommunicationRef> allRows = personCommunicationRefRepository.findAllByCompanyIdAndPerson_Id(companyId, person.getId());
         Map<String, PersonCommunicationRef> byCommunicationId = allRows.stream()
                 .collect(Collectors.toMap(PersonCommunicationRef::getCommunicationId, Function.identity()));
@@ -92,7 +100,10 @@ public class PersonCommunicationRefService {
             personCommunicationRefRepository.saveAll(toCreate);
         }
 
-        return getRefs(companyId, personId);
+        PersonCommunicationRefsResponse response = getRefs(companyId, personId);
+        int currentCount = response.getCommunicationIds() == null ? 0 : response.getCommunicationIds().size();
+        LOG.info("Replaced communication refs company={} person={} resultingCount={}", companyId, personId, currentCount);
+        return response;
     }
 
     private Person assertPersonInCompany(String companyId, String personId) {

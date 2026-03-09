@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,6 +35,8 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Teams Command")
 @SecurityRequirement(name = "bearerAuth")
 public class TeamCommandController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TeamCommandController.class);
 
     private final TeamCommandService teamCommandService;
 
@@ -66,7 +70,10 @@ public class TeamCommandController {
             @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
-        return teamCommandService.createTeam(companyId, request, actorId);
+        LOG.info("Create team request company={} name={} actor={}", companyId, request.getName(), actorId);
+        TeamResponse response = teamCommandService.createTeam(companyId, request, actorId);
+        LOG.info("Created teamId={} for company={}", response.getTeamId(), companyId);
+        return response;
     }
 
     @PatchMapping("/{teamId}")
@@ -98,7 +105,10 @@ public class TeamCommandController {
             @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
-        return teamCommandService.updateTeam(companyId, teamId, request, actorId);
+        LOG.info("Update team request company={} team={} actor={}", companyId, teamId, actorId);
+        TeamResponse response = teamCommandService.updateTeam(companyId, teamId, request, actorId);
+        LOG.info("Updated teamId={} for company={}", response.getTeamId(), companyId);
+        return response;
     }
 
     @PostMapping("/{teamId}/trash")
@@ -123,7 +133,10 @@ public class TeamCommandController {
             @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
-        return teamCommandService.trashTeam(companyId, teamId, actorId);
+        LOG.info("Trash team request company={} team={} actor={}", companyId, teamId, actorId);
+        TeamResponse response = teamCommandService.trashTeam(companyId, teamId, actorId);
+        LOG.info("Trashed teamId={} for company={}", response.getTeamId(), companyId);
+        return response;
     }
 
     @PostMapping("/{teamId}/restore")
@@ -148,7 +161,10 @@ public class TeamCommandController {
             @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
-        return teamCommandService.restoreTeam(companyId, teamId, actorId);
+        LOG.info("Restore team request company={} team={} actor={}", companyId, teamId, actorId);
+        TeamResponse response = teamCommandService.restoreTeam(companyId, teamId, actorId);
+        LOG.info("Restored teamId={} for company={}", response.getTeamId(), companyId);
+        return response;
     }
 
     @PostMapping("/{teamId}/members")
@@ -181,7 +197,10 @@ public class TeamCommandController {
             @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
-        return teamCommandService.addTeamMember(companyId, teamId, request, actorId);
+        LOG.info("Add team member request company={} team={} person={} primary={} actor={}", companyId, teamId, request.getPersonId(), request.getIsPrimary(), actorId);
+        TeamMemberResponse response = teamCommandService.addTeamMember(companyId, teamId, request, actorId);
+        LOG.info("Added membershipId={} team={} person={}", response.getMembershipId(), teamId, response.getPersonId());
+        return response;
     }
 
     @DeleteMapping("/{teamId}/members/{personId}")
@@ -208,7 +227,9 @@ public class TeamCommandController {
             @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
+        LOG.info("Remove team member request company={} team={} person={} actor={}", companyId, teamId, personId, actorId);
         teamCommandService.removeTeamMember(companyId, teamId, personId, actorId);
+        LOG.info("Removed member person={} from team={} for company={}", personId, teamId, companyId);
     }
 }
 

@@ -2,6 +2,7 @@ package de.innologic.personservice.config;
 
 import de.innologic.personservice.web.error.ProblemDetailFactory;
 import de.innologic.personservice.web.error.SecurityProblemSupport;
+import de.innologic.personservice.web.logging.CorrelationIdFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +22,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -48,6 +50,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    CorrelationIdFilter correlationIdFilter() {
+        return new CorrelationIdFilter();
+    }
+
+    @Bean
     @ConditionalOnMissingBean(ProblemDetailFactory.class)
     ProblemDetailFactory problemDetailFactory() {
         return new ProblemDetailFactory();
@@ -66,11 +73,13 @@ public class SecurityConfig {
             SecurityProblemSupport securityProblemSupport,
             TenantGuardFilter tenantGuardFilter,
             TenantAuthorizationManager tenantAuthorizationManager,
-            JwtAuthenticationConverter jwtAuthenticationConverter
+            JwtAuthenticationConverter jwtAuthenticationConverter,
+            CorrelationIdFilter correlationIdFilter
     ) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(correlationIdFilter, SecurityContextHolderFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/actuator/health",

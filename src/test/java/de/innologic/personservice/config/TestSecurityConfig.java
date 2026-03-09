@@ -3,13 +3,16 @@ package de.innologic.personservice.config;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import de.innologic.personservice.web.error.ProblemDetailFactory;
+import de.innologic.personservice.web.logging.CorrelationIdFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 
 import java.time.Instant;
 import java.util.List;
@@ -19,12 +22,18 @@ public class TestSecurityConfig {
 
     @Bean
     @ConditionalOnBean(HttpSecurity.class)
-    SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain testSecurityFilterChain(HttpSecurity http, @Qualifier("testCorrelationIdFilter") CorrelationIdFilter correlationIdFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .addFilterBefore(correlationIdFilter, SecurityContextHolderFilter.class)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
         return http.build();
+    }
+
+    @Bean(name = "testCorrelationIdFilter")
+    CorrelationIdFilter testCorrelationIdFilter() {
+        return new CorrelationIdFilter();
     }
 
     @Bean

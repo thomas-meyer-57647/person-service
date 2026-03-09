@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -30,6 +32,8 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Persons Command")
 @SecurityRequirement(name = "bearerAuth")
 public class PersonCommandController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PersonCommandController.class);
 
     private final PersonCommandService personCommandService;
 
@@ -61,7 +65,10 @@ public class PersonCommandController {
             @Parameter(description = "Optional actor identifier for auditing; defaults to the authenticated JWT subject or system.", example = "actor-1")
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
-        return personCommandService.createPerson(companyId, request, actorId);
+        LOG.info("Create person request company={} actor={}", companyId, actorId);
+        PersonResponse response = personCommandService.createPerson(companyId, request, actorId);
+        LOG.info("Created personId={} for company={}", response.getPersonId(), companyId);
+        return response;
     }
 
     @PatchMapping("/{personId}")
@@ -90,7 +97,10 @@ public class PersonCommandController {
             @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
-        return personCommandService.updatePerson(companyId, personId, request, actorId);
+        LOG.info("Update person request company={} person={} actor={}", companyId, personId, actorId);
+        PersonResponse response = personCommandService.updatePerson(companyId, personId, request, actorId);
+        LOG.info("Updated personId={} for company={}", response.getPersonId(), companyId);
+        return response;
     }
 
     @PostMapping("/{personId}/trash")
@@ -114,7 +124,10 @@ public class PersonCommandController {
             @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
-        return personCommandService.trashPerson(companyId, personId, actorId);
+        LOG.info("Trash person request company={} person={} actor={}", companyId, personId, actorId);
+        PersonResponse response = personCommandService.trashPerson(companyId, personId, actorId);
+        LOG.info("Trashed personId={} for company={}", response.getPersonId(), companyId);
+        return response;
     }
 
     @PostMapping("/{personId}/restore")
@@ -138,7 +151,10 @@ public class PersonCommandController {
             @Parameter(description = "Optional actor identifier for auditing.", example = "actor-1")
             @RequestHeader(name = "X-Actor-Id", required = false) String actorId
     ) {
-        return personCommandService.restorePerson(companyId, personId, actorId);
+        LOG.info("Restore person request company={} person={} actor={}", companyId, personId, actorId);
+        PersonResponse response = personCommandService.restorePerson(companyId, personId, actorId);
+        LOG.info("Restored personId={} for company={}", response.getPersonId(), companyId);
+        return response;
     }
 }
 

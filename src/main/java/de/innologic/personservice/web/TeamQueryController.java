@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -21,7 +23,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import java.util.List;
 
 @RestController
@@ -29,6 +30,8 @@ import java.util.List;
 @Tag(name = "Teams Query")
 @SecurityRequirement(name = "bearerAuth")
 public class TeamQueryController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TeamQueryController.class);
 
     private final TeamQueryService teamQueryService;
 
@@ -54,7 +57,10 @@ public class TeamQueryController {
             @RequestParam(defaultValue = "false") boolean includeTrashed,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return teamQueryService.listTeams(companyId, q, includeTrashed, pageable);
+        LOG.info("List teams request company={} includeTrashed={} query={}", companyId, includeTrashed, q);
+        Page<TeamResponse> teams = teamQueryService.listTeams(companyId, q, includeTrashed, pageable);
+        LOG.info("Returning {} teams for company={} includeTrashed={} query={}", teams.getNumberOfElements(), companyId, includeTrashed, q);
+        return teams;
     }
 
     @GetMapping("/{teamId}")
@@ -76,7 +82,10 @@ public class TeamQueryController {
             @PathVariable String companyId,
             @Parameter(description = "Public teamId for the team.", required = true, example = "team-123")
             @PathVariable String teamId) {
-        return teamQueryService.getTeam(companyId, teamId);
+        LOG.info("Get team request company={} team={}", companyId, teamId);
+        TeamResponse response = teamQueryService.getTeam(companyId, teamId);
+        LOG.info("Found teamId={} for company={}", response.getTeamId(), companyId);
+        return response;
     }
 
     @GetMapping("/{teamId}/members")
@@ -97,7 +106,10 @@ public class TeamQueryController {
             @PathVariable String companyId,
             @Parameter(description = "Public teamId whose members should be returned.", required = true, example = "team-123")
             @PathVariable String teamId) {
-        return teamQueryService.getTeamMembers(companyId, teamId);
+        LOG.info("Get team members request company={} team={}", companyId, teamId);
+        List<TeamMemberResponse> members = teamQueryService.getTeamMembers(companyId, teamId);
+        LOG.info("Returning {} members for team={} company={}", members.size(), teamId, companyId);
+        return members;
     }
 }
 

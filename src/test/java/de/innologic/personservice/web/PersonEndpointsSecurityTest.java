@@ -13,6 +13,7 @@ import de.innologic.personservice.web.error.GlobalExceptionHandler;
 import de.innologic.personservice.web.error.InvalidTokenAuthenticationException;
 import de.innologic.personservice.web.error.NotFoundException;
 import de.innologic.personservice.web.error.SecurityProblemSupport;
+import de.innologic.personservice.web.logging.CorrelationIdFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -39,6 +40,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -301,6 +303,28 @@ class PersonEndpointsSecurityTest {
         mockMvc.perform(get("/api/v1/companies/{companyId}/persons/{personId}", COMPANY_ID, 999L)
                         .with(jwtWithTenantAndScope(COMPANY_ID, "person:read")))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getPerson_shouldIncludeCorrelationIdHeader_whenMissing() throws Exception {
+        when(personQueryService.getPerson(COMPANY_ID, PERSON_ID)).thenReturn(samplePersonResponse(10L, COMPANY_ID));
+
+        mockMvc.perform(get("/api/v1/companies/{companyId}/persons/{personId}", COMPANY_ID, PERSON_ID)
+                        .with(jwtWithTenantAndScope(COMPANY_ID, "person:read")))
+                .andExpect(status().isOk())
+                .andExpect(header().exists(CorrelationIdFilter.HEADER));
+    }
+
+    @Test
+    void getPerson_shouldReturnProvidedCorrelationIdHeader() throws Exception {
+        when(personQueryService.getPerson(COMPANY_ID, PERSON_ID)).thenReturn(samplePersonResponse(10L, COMPANY_ID));
+        String incomingCorrelationId = "incoming-correlation-999";
+
+        mockMvc.perform(get("/api/v1/companies/{companyId}/persons/{personId}", COMPANY_ID, PERSON_ID)
+                        .header(CorrelationIdFilter.HEADER, incomingCorrelationId)
+                        .with(jwtWithTenantAndScope(COMPANY_ID, "person:read")))
+                .andExpect(status().isOk())
+                .andExpect(header().string(CorrelationIdFilter.HEADER, incomingCorrelationId));
     }
 
     @Test

@@ -20,12 +20,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/v1/companies/{companyId}/persons")
 @Tag(name = "Persons Query")
 @SecurityRequirement(name = "bearerAuth")
 public class PersonQueryController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PersonQueryController.class);
 
     private final PersonQueryService personQueryService;
 
@@ -56,7 +60,10 @@ public class PersonQueryController {
             @RequestParam(defaultValue = "false") boolean includeTrashed,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return personQueryService.listPersons(companyId, q, includeTrashed, pageable);
+        LOG.info("List persons request company={} includeTrashed={} query={}", companyId, includeTrashed, q);
+        Page<PersonResponse> persons = personQueryService.listPersons(companyId, q, includeTrashed, pageable);
+        LOG.info("Returning {} persons for company={} includeTrashed={} query={}", persons.getNumberOfElements(), companyId, includeTrashed, q);
+        return persons;
     }
 
     @GetMapping("/{personId}")
@@ -79,7 +86,10 @@ public class PersonQueryController {
             @Parameter(description = "Public person ID to load.", required = true, example = "beb65d9f-8f4b-4c1f-9b0d-1c3ffc572123")
             @PathVariable String personId
     ) {
-        return personQueryService.getPerson(companyId, personId);
+        LOG.info("Get person request company={} person={}", companyId, personId);
+        PersonResponse response = personQueryService.getPerson(companyId, personId);
+        LOG.info("Found personId={} for company={}", response.getPersonId(), companyId);
+        return response;
     }
 }
 
