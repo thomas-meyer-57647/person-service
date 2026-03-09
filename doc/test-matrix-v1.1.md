@@ -14,13 +14,19 @@
 | PUT | `/api/v1/companies/{companyId}/persons/{personId}/communication-refs` | `PersonCommunicationRefController#replaceCommunicationRefs` | `PersonCommunicationRefsRequest` | `PersonCommunicationRefsResponse` |
 | GET | `/api/v1/companies/{companyId}/persons` | `PersonQueryController#listPersons` | - (Query: `q`, `includeTrashed`, Paging) | `Page<PersonResponse>` |
 | GET | `/api/v1/companies/{companyId}/persons/{personId}` | `PersonQueryController#getPerson` | - | `PersonResponse` |
+| POST | `/api/v1/companies/{companyId}/person-classifications` | `PersonClassificationCommandController#createClassification` | `PersonClassificationCreateRequest` | `PersonClassificationResponse` |
+| PATCH | `/api/v1/companies/{companyId}/person-classifications/{classificationId}` | `PersonClassificationCommandController#updateClassification` | `PersonClassificationUpdateRequest` | `PersonClassificationResponse` |
+| POST | `/api/v1/companies/{companyId}/person-classifications/{classificationId}/deactivate` | `PersonClassificationCommandController#deactivateClassification` | - | `PersonClassificationResponse` |
+| GET | `/api/v1/companies/{companyId}/person-classifications` | `PersonClassificationQueryController#listClassifications` | - (`includeInactive`) | `List<PersonClassificationResponse>` |
+| POST | `/api/v1/companies/{companyId}/person-classifications/persons/{personId}/classifications` | `PersonClassificationCommandController#assignClassification` | `PersonClassificationAssignmentRequest` | `PersonClassificationAssignmentResponse` |
+| DELETE | `/api/v1/companies/{companyId}/person-classifications/persons/{personId}/classifications/{assignmentId}` | `PersonClassificationCommandController#removeAssignment` | - | - (`204`) |
 | POST | `/api/v1/companies/{companyId}/teams` | `TeamCommandController#createTeam` | `TeamCreateRequest` | `TeamResponse` |
 | PATCH | `/api/v1/companies/{companyId}/teams/{teamId}` | `TeamCommandController#updateTeam` | `TeamUpdateRequest` | `TeamResponse` |
 | POST | `/api/v1/companies/{companyId}/teams/{teamId}/trash` | `TeamCommandController#trashTeam` | - | `TeamResponse` |
 | POST | `/api/v1/companies/{companyId}/teams/{teamId}/restore` | `TeamCommandController#restoreTeam` | - | `TeamResponse` |
 | POST | `/api/v1/companies/{companyId}/teams/{teamId}/members` | `TeamCommandController#addMember` | `TeamMemberAddRequest` | `TeamMemberResponse` |
 | DELETE | `/api/v1/companies/{companyId}/teams/{teamId}/members/{personId}` | `TeamCommandController#removeMember` | - | - (`204 No Content`) |
-| GET | `/api/v1/companies/{companyId}/teams` | `TeamQueryController#listTeams` | - (Query: `q`, `includeTrashed`, Paging) | `Page<TeamResponse>` |
+| GET | `/api/v1/companies/{companyId}/teams` | `TeamQueryController#listTeams` | - (Query) | `Page<TeamResponse>` |
 | GET | `/api/v1/companies/{companyId}/teams/{teamId}` | `TeamQueryController#getTeam` | - | `TeamResponse` |
 | GET | `/api/v1/companies/{companyId}/teams/{teamId}/members` | `TeamQueryController#getTeamMembers` | - | `List<TeamMemberResponse>` |
 
@@ -28,32 +34,36 @@
 
 | HTTP | Pfad | Positiv (2xx) | Negativ: 401 ohne JWT | Negativ: 403 fehlender Scope | Negativ: 403 tenant mismatch | Fachlicher Negativfall (mind. ein 400/404/409) |
 |---|---|---|---|---|---|---|
-| GET | `/person/ping` | `200` mit `service`,`version` | ohne JWT -> `401` (falls abgesichert) | ohne erforderlichen Scope -> `403` (falls Scope-Pruefung aktiv) | n/a (kein `companyId` im Pfad) | n/a (kein fachlicher 400/404/409-Fall definiert) |
-| GET | `/person/version` | `200` mit `service`,`version`,`buildTime` | ohne JWT -> `401` (falls abgesichert) | ohne erforderlichen Scope -> `403` (falls Scope-Pruefung aktiv) | n/a (kein `companyId` im Pfad) | n/a (kein fachlicher 400/404/409-Fall definiert) |
-| POST | `/api/v1/companies/{companyId}/persons` | `201` Person erstellt | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `400` bei Validation (z. B. `companyId` im Body fehlt) |
-| PATCH | `/api/v1/companies/{companyId}/persons/{personId}` | `200` Person aktualisiert | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn Person nicht existiert |
-| POST | `/api/v1/companies/{companyId}/persons/{personId}/trash` | `200` Person getrasht | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn Person nicht existiert |
-| POST | `/api/v1/companies/{companyId}/persons/{personId}/restore` | `200` Person restored | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn Person nicht existiert |
-| GET | `/api/v1/companies/{companyId}/persons/{personId}/communication-refs` | `200` Refs geladen | ohne JWT -> `401` | Read-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn Person nicht existiert |
-| PUT | `/api/v1/companies/{companyId}/persons/{personId}/communication-refs` | `200` Refs ersetzt | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `400` bei Validation (`communicationIds` fehlt) |
-| GET | `/api/v1/companies/{companyId}/persons` | `200` Liste/Paging erfolgreich | ohne JWT -> `401` | Read-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `400` bei ungueltigem `includeTrashed` |
-| GET | `/api/v1/companies/{companyId}/persons/{personId}` | `200` Person geladen | ohne JWT -> `401` | Read-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn Person nicht existiert |
-| POST | `/api/v1/companies/{companyId}/teams` | `201` Team erstellt | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `409` bei doppeltem Teamnamen |
-| PATCH | `/api/v1/companies/{companyId}/teams/{teamId}` | `200` Team aktualisiert | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn Team nicht existiert |
-| POST | `/api/v1/companies/{companyId}/teams/{teamId}/trash` | `200` Team getrasht | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn Team nicht existiert |
-| POST | `/api/v1/companies/{companyId}/teams/{teamId}/restore` | `200` Team restored | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn Team nicht existiert |
-| POST | `/api/v1/companies/{companyId}/teams/{teamId}/members` | `201` Member hinzugefuegt | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `409` bei bereits aktiver Mitgliedschaft |
-| DELETE | `/api/v1/companies/{companyId}/teams/{teamId}/members/{personId}` | `204` Member entfernt | ohne JWT -> `401` | Write-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn aktive Mitgliedschaft nicht existiert |
-| GET | `/api/v1/companies/{companyId}/teams` | `200` Liste/Paging erfolgreich | ohne JWT -> `401` | Read-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `400` bei ungueltigem `includeTrashed` |
-| GET | `/api/v1/companies/{companyId}/teams/{teamId}` | `200` Team geladen | ohne JWT -> `401` | Read-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn Team nicht existiert |
-| GET | `/api/v1/companies/{companyId}/teams/{teamId}/members` | `200` Team-Mitglieder geladen | ohne JWT -> `401` | Read-Scope fehlt -> `403` | Token-Tenant != `{companyId}` -> `403` | `404` wenn Team nicht existiert |
+| `/person/ping` | GET | `200` mit Service/Version | n/a | n/a | n/a | n/a |
+| `/person/version` | GET | `200` mit Versioninfo | n/a | n/a | n/a | n/a |
+| `/api/v1/companies/{companyId}/persons` | POST | `201` | `401` | `403` | `403` | `400` Body vs Path |
+| `/api/v1/companies/{companyId}/persons/{personId}` | PATCH | `200` | `401` | `403` | `403` | `404` nicht existent |
+| `/api/v1/companies/{companyId}/persons/{personId}/trash` | POST | `200` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/persons/{personId}/restore` | POST | `200` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/persons/{personId}/communication-refs` | GET | `200` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/persons/{personId}/communication-refs` | PUT | `200` | `401` | `403` | `403` | `400` |
+| `/api/v1/companies/{companyId}/persons` | GET | `200` | `401` | `403` | `403` | `400` |
+| `/api/v1/companies/{companyId}/persons/{personId}` | GET | `200` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/person-classifications` | POST | `201` | `401` | `403` | `403` | `409` |
+| `/api/v1/companies/{companyId}/person-classifications/{classificationId}` | PATCH | `200` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/person-classifications/{classificationId}/deactivate` | POST | `200` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/person-classifications` | GET | `200` | `401` | `403` | `403` | `400` |
+| `/api/v1/companies/{companyId}/person-classifications/persons/{personId}/classifications` | POST | `201` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/person-classifications/persons/{personId}/classifications/{assignmentId}` | DELETE | `204` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/teams` | POST | `201` | `401` | `403` | `403` | `409` |
+| `/api/v1/companies/{companyId}/teams/{teamId}` | PATCH | `200` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/teams/{teamId}/trash` | POST | `200` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/teams/{teamId}/restore` | POST | `200` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/teams/{teamId}/members` | POST | `201` | `401` | `403` | `403` | `409` |
+| `/api/v1/companies/{companyId}/teams/{teamId}/members/{personId}` | DELETE | `204` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/teams` | GET | `200` | `401` | `403` | `403` | `400` |
+| `/api/v1/companies/{companyId}/teams/{teamId}` | GET | `200` | `401` | `403` | `403` | `404` |
+| `/api/v1/companies/{companyId}/teams/{teamId}/members` | GET | `200` | `401` | `403` | `403` | `404` |
 
 ## 3) Test-Abbildung auf vorhandene Testklassen
 
 | HTTP | Pfad | WebMvc Positivtest(s) | WebMvc Fachlicher Negativtest(s) | Integration Positivtest(s) | Integration Fachlicher Negativtest(s) |
 |---|---|---|---|---|---|
-| GET | `/person/ping` | `OpsControllerTest#shouldReturnPingWithFallbackVersion_whenBuildPropertiesMissingAndBasePathUnset` | - | - | - |
-| GET | `/person/version` | `OpsControllerTest#shouldReturnVersionWithFallbackVersion_whenBuildPropertiesMissing`, `OpsControllerBuildPropertiesTest#shouldReturnVersionWithBuildProperties_whenAvailable` | - | - | - |
 | POST | `/api/v1/companies/{companyId}/persons` | `PersonCommandControllerTest#shouldCreatePerson_whenValidRequest` | `PersonCommandControllerTest#shouldReturn400_whenCreatePersonMissingCompanyId` | `PersonTeamIntegrationTests#shouldCreatePerson_whenValidRequest` | `PersonTeamIntegrationTests#shouldReturn400_whenCreatePersonMissingCompanyId` |
 | PATCH | `/api/v1/companies/{companyId}/persons/{personId}` | `PersonCommandControllerTest#shouldUpdatePerson_whenValidPatch` | `PersonCommandControllerTest#shouldReturn404_whenUpdatePersonNotFound` | `PersonTeamIntegrationTests#shouldPatchPerson_whenPersonExists` | `PersonTeamIntegrationTests#shouldReturn404_whenPatchPersonNotFound` |
 | POST | `/api/v1/companies/{companyId}/persons/{personId}/trash` | `PersonCommandControllerTest#shouldTrashPerson_whenPersonExists` | `PersonCommandControllerTest#shouldReturn404_whenTrashPersonNotFound` | `PersonTeamIntegrationTests#shouldTrashPerson_andFilterByIncludeTrashed` | `PersonTeamIntegrationTests#shouldReturn404_whenTrashPersonNotFound` |
@@ -62,6 +72,12 @@
 | PUT | `/api/v1/companies/{companyId}/persons/{personId}/communication-refs` | `PersonCommunicationRefControllerTest#shouldPutCommunicationRefs_whenValidRequest` | `PersonCommunicationRefControllerTest#shouldReturn400_whenPutCommunicationRefsMissingList` | `PersonTeamIntegrationTests#shouldPutCommunicationRefs_whenValidRequest` | `PersonTeamIntegrationTests#shouldReturn400_whenPutCommunicationRefsValidationFails` |
 | GET | `/api/v1/companies/{companyId}/persons` | `PersonQueryControllerTest#shouldListPersons_whenValidRequest` | `PersonQueryControllerTest#shouldReturn400_whenInvalidIncludeTrashedParameter` | `PersonTeamIntegrationTests#shouldListPersons_whenDataExists` | `PersonTeamIntegrationTests#shouldReturn400_whenListPersonsHasInvalidIncludeTrashedParam` |
 | GET | `/api/v1/companies/{companyId}/persons/{personId}` | `PersonQueryControllerTest#shouldGetPerson_whenPersonExists` | `PersonQueryControllerTest#shouldReturn404_whenPersonDoesNotExist` | `PersonTeamIntegrationTests#shouldGetPersonById_whenPersonExists` | `PersonTeamIntegrationTests#shouldReturn404_whenGetPersonByIdNotFound` |
+| POST | `/api/v1/companies/{companyId}/person-classifications` | `PersonClassificationCommandControllerTest#shouldCreateClassification_whenValidRequest` | `PersonClassificationCommandControllerTest#shouldReturn409_whenCreateClassificationConflict` | - | - |
+| PATCH | `/api/v1/companies/{companyId}/person-classifications/{classificationId}` | `PersonClassificationCommandControllerTest#shouldUpdateClassification_whenValidPatch` | `PersonClassificationCommandControllerTest#shouldReturn404_whenUpdateClassificationNotFound` | - | - |
+| POST | `/api/v1/companies/{companyId}/person-classifications/{classificationId}/deactivate` | `PersonClassificationCommandControllerTest#shouldDeactivateClassification_whenFound` | `PersonClassificationCommandControllerTest#shouldReturn404_whenDeactivateMissing` | - | - |
+| GET | `/api/v1/companies/{companyId}/person-classifications` | `PersonClassificationQueryControllerTest#shouldListClassifications_whenValidRequest` | `PersonClassificationQueryControllerTest#shouldReturn400_whenIncludeInactiveNotBoolean` | - | - |
+| POST | `/api/v1/companies/{companyId}/person-classifications/persons/{personId}/classifications` | `PersonClassificationCommandControllerTest#shouldAssignClassification_whenValidRequest` | `PersonClassificationCommandControllerTest#shouldReturn404_whenAssignClassificationMissingEntity` | - | - |
+| DELETE | `/api/v1/companies/{companyId}/person-classifications/persons/{personId}/classifications/{assignmentId}` | `PersonClassificationCommandControllerTest#shouldRemoveAssignment_whenExists` | `PersonClassificationCommandControllerTest#shouldReturn404_whenRemoveMissingAssignment` | - | - |
 | POST | `/api/v1/companies/{companyId}/teams` | `TeamCommandControllerTest#shouldCreateTeam_whenValidRequest` | `TeamCommandControllerTest#shouldReturn409_whenCreateTeamHasDuplicateName` | `PersonTeamIntegrationTests#shouldCreateTeam_whenValidRequest` | `PersonTeamIntegrationTests#shouldReturn409_whenCreateTeamDuplicateNameInCompany` |
 | PATCH | `/api/v1/companies/{companyId}/teams/{teamId}` | `TeamCommandControllerTest#shouldUpdateTeam_whenValidPatch` | `TeamCommandControllerTest#shouldReturn404_whenUpdateTeamNotFound` | `PersonTeamIntegrationTests#shouldPatchTeam_whenTeamExists` | `PersonTeamIntegrationTests#shouldReturn404_whenPatchTeamNotFound` |
 | POST | `/api/v1/companies/{companyId}/teams/{teamId}/trash` | `TeamCommandControllerTest#shouldTrashTeam_whenTeamExists` | `TeamCommandControllerTest#shouldReturn404_whenTrashTeamNotFound` | `PersonTeamIntegrationTests#shouldTrashTeam_whenTeamExists` | `PersonTeamIntegrationTests#shouldReturn404_whenTrashTeamNotFound` |
@@ -75,4 +91,4 @@
 ## 4) Grundlage der Bestandsaufnahme
 
 - Controller-Definitionen in `src/main/java/de/innologic/personservice/web/*Controller.java`.
-- Fachliche Negativfaelle aus bestehenden Web-/Integrationstests unter `src/test/java/de/innologic/personservice/web/*.java` und `src/test/java/de/innologic/personservice/PersonTeamIntegrationTests.java`.
+- Fachliche Negativfälle aus Web-/Integrationstests unter `src/test/java/de/innologic/personservice/web/*.java` und `src/test/java/de/innologic/personservice/PersonTeamIntegrationTests.java`.

@@ -1,6 +1,6 @@
 # Person Service
 
-Tenant-aware Spring Boot service for managing persons, teams, memberships and communication references. The service exposes the versioned REST API under `/api/v1`, persists data via Spring Data JPA/Flyway, and documents every controller, DTO and enum through Springdoc OpenAPI. It is designed to run locally without any Docker requirement as soon as a compatible database is reachable.
+Tenant-aware Spring Boot service for managing persons, teams, memberships, person classifications and classification assignments. The service exposes the versioned REST API under `/api/v1`, persists data via Spring Data JPA/Flyway, and documents every controller, DTO and enum through Springdoc OpenAPI. It is designed to run locally without any Docker requirement as soon as a compatible database is reachable.
 
 ## Local Development
 
@@ -65,4 +65,4 @@ Dive into [`doc/dependencies.md`](doc/dependencies.md) for the curated list of r
 
 ### Tests
 - Run `.\mvnw.cmd -q clean test` to execute all units, controller slices, integration tests and security verifications. The suite uses embedded H2/Testcontainers for persistence and mocks JWT validation, so it never relies on external services.
-- Positive and negative tests cover every exposed endpoint, and the security configuration is validated via dedicated WebMvc slices (`PersonEndpointsSecurityTest`, `TeamEndpointsSecurityTest`, etc.).
+- Positive and negative tests cover every exposed endpoint, including the new classification and assignment surface (`PersonClassificationCommandControllerTest`, `PersonClassificationQueryControllerTest`), and the security configuration is validated via dedicated WebMvc slices (`PersonEndpointsSecurityTest`, `TeamEndpointsSecurityTest`, etc.).
